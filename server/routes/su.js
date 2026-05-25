@@ -97,29 +97,29 @@ router.post('/userProfile', async (req,res) => {
 
     try {
         const {data: {user}} = await supabase.auth.getUser(token);
-    } catch(error) {
+        
+        const userID = user.id;
+        req.user = userID;
+
+        if(!userID) {
+            return res.status(401).json({error: 'Unauthorized 3'});
+        }
+
+        const {matricYear} = req.body;
+
+        if(!matricYear) {
+            return res.status(400).json({error: 'Matric year is required'});
+        }
+
+        try {
+            const userProfile = await userProfileDB.upsertUserProfile(userID, matricYear);
+            res.json({message: 'User profile updated successfully', userProfile});
+        } catch(error) {
+            console.error('Error updating user profile:', error);
+            res.status(500).json({error: 'Internal Server Error'});
+    }} catch(error) {
         console.error('Error fetching user:', error);
         return res.status(401).json({error: 'Unauthorized 2'});
-    }
-    const userID = user.id;
-    req.user = userID;
-
-    if(!userID) {
-        return res.status(401).json({error: 'Unauthorized 3'});
-    }
-
-    const {matricYear} = req.body;
-
-    if(!matricYear) {
-        return res.status(400).json({error: 'Matric year is required'});
-    }
-
-    try {
-        const userProfile = await userProfileDB.upsertUserProfile(userID, matricYear);
-        res.json({message: 'User profile updated successfully', userProfile});
-    } catch(error) {
-        console.error('Error updating user profile:', error);
-        res.status(500).json({error: 'Internal Server Error'});
     }
 });
 
@@ -131,30 +131,29 @@ router.post('/info', async (req, res) => {
     }
 
     try{
-        const {data: {user}} = await supabase.auth.getUser(token);
-    } catch(error) {
+        const {data: {user}} = await supabase.auth.getUser(token); 
+        const userID = user.id;
+        req.user = userID;
+
+        if(!userID) {
+            return res.status(401).json({error: 'Unauthorized 3'});
+        }
+
+        const {totalSu, usedSU} = req.body;
+        
+        if(totalSu === undefined || usedSU === undefined) {
+            return res.status(400).json({error: 'Total SU and Used SU are required'});
+        }
+
+        try {
+            const userSuInfo = await userSuInfoDB.upsertSuInfo(userID, totalSu, usedSU);
+            res.json({message: 'User SU info updated successfully', userSuInfo});
+        } catch(error) {
+            console.error('Error updating user SU info:', error);
+            res.status(500).json({error: 'Internal Server Error'});
+    }} catch(error) {
         console.error('Error fetching user:', error);
         return res.status(401).json({error: 'Unauthorized 2'});
-    }
-    const userID = user.id;
-    req.user = userID;
-
-    if(!userID) {
-        return res.status(401).json({error: 'Unauthorized 3'});
-    }
-
-    const {totalSu, usedSU} = req.body;
-    
-    if(totalSu === undefined || usedSU === undefined) {
-        return res.status(400).json({error: 'Total SU and Used SU are required'});
-    }
-
-    try {
-        const userSuInfo = await userSuInfoDB.upsertSuInfo(userID, totalSu, usedSU);
-        res.json({message: 'User SU info updated successfully', userSuInfo});
-    } catch(error) {
-        console.error('Error updating user SU info:', error);
-        res.status(500).json({error: 'Internal Server Error'});
     }
 });
 
