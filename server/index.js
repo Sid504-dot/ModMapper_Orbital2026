@@ -7,12 +7,14 @@ const authRouter = require('./routes/auth');
 const modulesRouter = require('./routes/modules');
 require('./services/cron');
 const timetableRouter = require('./routes/timetable');
+const suRouter = require('./routes/su');
 
 app.use(express.json());
 app.use(cors({ origin: '*' }))
 app.use('/auth', authRouter);
 app.use('/modules', modulesRouter);
 app.use('/timetable', timetableRouter);
+app.use('/su', suRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

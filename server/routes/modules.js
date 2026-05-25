@@ -17,12 +17,12 @@ router.get('/', async (req, res) => {
                 module_name: newData.title,
                 semesters: newData.semesterData,
                 cached_at: new Date().toISOString(),
+                is_su_eligible: newData.attributes?.su ?? null,
             });
 
             return res.json(newData);
         }
         catch (error) {
-            console.error(`Failed to fetch module data for ${b} from NUSMods`, error);
             return res.status(500).json({ error: 'Failed to fetch module data from NUSMods' });
         }
     }        

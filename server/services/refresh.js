@@ -17,6 +17,7 @@ async function processEachModule(module, existingMap) {
                 module_name: title,
                 semesters: semesterData,
                 cached_at: cachedAt,
+                is_su_eligible: fullData.attributes?.su ?? null,
             });
             console.log(`Updated module: ${moduleCode}`);
         } else {
@@ -25,6 +26,7 @@ async function processEachModule(module, existingMap) {
                 module_name: existingModule.module_name,
                 semesters: existingModule.semesters,
                 cached_at: cachedAt,
+                is_su_eligible: fullData.attributes?.su ?? null,
             });
             console.log(`Updated cache timestamp for module: ${moduleCode}`);
         }} else {
@@ -33,6 +35,7 @@ async function processEachModule(module, existingMap) {
             module_name: title,
             semesters: semesterData,
             cached_at: cachedAt,
+            is_su_eligible: fullData.attributes?.su ?? null,
         });
         console.log(`Inserted new module: ${moduleCode}`);
     }
