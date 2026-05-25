@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
             return res.json(newData);
         }
         catch (error) {
-            return res.status(500).json({ error: 'Failed to fetch module data from NUSMods' });
+            return res.status(500).json({ error: 'Failed to fetch module data from NUSMods' }, error);
         }
     }        
     return res.json(data);

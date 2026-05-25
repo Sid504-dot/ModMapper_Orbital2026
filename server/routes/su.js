@@ -102,6 +102,7 @@ router.post('/userProfile', async (req,res) => {
         return res.status(401).json({error: 'Unauthorized 2'});
     }
     const userID = user.id;
+    req.user = userID;
 
     if(!userID) {
         return res.status(401).json({error: 'Unauthorized 3'});
@@ -136,6 +137,7 @@ router.post('/info', async (req, res) => {
         return res.status(401).json({error: 'Unauthorized 2'});
     }
     const userID = user.id;
+    req.user = userID;
 
     if(!userID) {
         return res.status(401).json({error: 'Unauthorized 3'});
