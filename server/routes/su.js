@@ -10,11 +10,11 @@ const moduleDB = require('../db/modules');
 router.get('/', async (req, res) => {
     const token = req.headers.authorization.split(' ')[1];
         
-        if (!token) {
-            return res.status(401).json({ error: 'Unauthorized 1' });
-        }
-        
-        try {
+    if (!token) {
+        return res.status(401).json({ error: 'Unauthorized 1' });
+    }
+    
+    try {
         const { data: { user }} = await supabase.auth.getUser(token);
         const userID = user.id;
         
@@ -156,5 +156,33 @@ router.post('/info', async (req, res) => {
         return res.status(401).json({error: 'Unauthorized 2'});
     }
 });
+
+router.post('/eligible', async (req, res) => {
+    const token = req.headers.authorization.split(" ")[1];
+    
+    if(!token) {
+        return res.status(401).json({error: 'Unauthorized 1'});
+    }
+
+    try {
+        const {data: {user}} = await supabase.auth.getUser(token); 
+        const userID = user.id;
+        req.user = userID;
+
+        if(!userID) {
+            return res.status(401).json({error: 'Unauthorized 3'});
+        }
+
+        const userReqModules = req.body.map(m => m.moduleCode);
+        const { data: suAbleModules } = await moduleDB.getSuAbleModulesByCodes(userReqModules);
+
+        res.json({suAbleModules});
+    } catch(error) {
+        console.error('Error fetching user:', error);
+        return res.status(401).json({error: 'Unauthorized 2'});
+    }
+});
+
+
 
 module.exports = router;
