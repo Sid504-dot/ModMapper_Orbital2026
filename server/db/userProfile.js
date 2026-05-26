@@ -1,4 +1,4 @@
-const supabase = require('../supabase');
+const supabase = require('./supabase');
 
 async function getUserProfile(userID) {
     const { data, error } = await supabase.from('user_profile').select().eq('user_id', userID).single();
