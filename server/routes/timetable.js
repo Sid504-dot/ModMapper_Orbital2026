@@ -18,8 +18,9 @@
         }
 
         req.user = userID;
+        const sem = req.sem;
 
-        const { data, error } = await timetableDB.getTimetableByUserID(userID);
+        const { data, error } = await timetableDB.getTimetableByUserID(userID, sem);
         
         if (error) {
             return res.status(500).json({ error: 'Failed to fetch timetable 1' });
@@ -51,7 +52,7 @@
         const { data, error } = await timetableDB.upsertTimetableEntry(entryData);
 
         if (error) {
-            return res.status(500).json({ error: error.message });;
+            return res.status(500).json({ error: error.message });
         }
 
         res.json(data);

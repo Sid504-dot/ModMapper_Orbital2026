@@ -1,9 +1,6 @@
 const refresh = require('./refresh');
 const cron = require('node-cron');
 
-console.log('Running initial module refresh on startup');
-refresh.refreshModules();
-
 cron.schedule('0 2 * * *', () => {
     const date = new Date().getDate();
     const month = new Date().getMonth() + 1;

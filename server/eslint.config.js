@@ -14,7 +14,7 @@ module.exports = [
       "no-unused-vars": "warn",
     },
   },
-  // ← add this block
+
   {
     files: ["__tests__/**/*.js"],
     languageOptions: {

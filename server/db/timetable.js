@@ -1,13 +1,17 @@
 const supabase = require('./supabase');
+const userSemDB = require('./userSem');
 
-function getTimetableByUserID(userID) {
-
-    return supabase.from('user_timetable').select().eq('user_id', userID);
-
+async function getTimetableByUserID(userID, sem) {
+    const sem = await userSemDB.getUserSemByUserID(userID);
+    return supabase.from('user_timetable').select().eq('user_id', userID).eq('sem_number', sem);
 }
 
-function upsertTimetableEntry(entryData) {
-    return supabase.from('user_timetable').upsert(entryData, { onConflict: 'user_id' }).select();
+async function upsertTimetableEntry(entryData) {
+    const sem = await userSemDB.getUserSemByUserID(entryData.user_id);
+    entryData.sem_number = sem;
+    return supabase.from('user_timetable')
+        .upsert(entryData, { onConflict: 'user_id,sem_number' })
+        .select();
 }
 
 module.exports = {
