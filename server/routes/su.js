@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
         }
 
         req.user = userID;
-        const matricYear = 1;
+        let matricYear = 1;
         const sem = await userSemDB.getUserSemByUserID(userID);
         if (sem <=2) {
             matricYear = 1;
