@@ -9,10 +9,7 @@
         const augustOrLater = month >= 8;   
         let sem = temp * 2 + 1;
         if (augustOrLater) sem += 1;
-
-        if (sem < 1) sem = 1;
-        if (sem > 8) sem = 8;
-
+        
         return sem;
     }
 
