@@ -6,6 +6,7 @@ const timetableDB = require('../db/timetable');
 const userSuInfoDB = require('../db/userSuInfo');
 const moduleDB = require('../db/modules');
 const userSemDB = require('../db/userSem');
+const userProfileDB = require('../db/userProfile');
 
 router.get('/', async (req, res) => {
     const token = req.headers.authorization.split(' ')[1];
@@ -23,7 +24,7 @@ router.get('/', async (req, res) => {
         }
 
         req.user = userID;
-
+        const matricYear = 1;
         const sem = await userSemDB.getUserSemByUserID(userID);
         if (sem <=2) {
             matricYear = 1;
@@ -38,8 +39,8 @@ router.get('/', async (req, res) => {
         const suPolicyData = await suPolicy.getSuPolicy(matricYear);
         const userSuInfoData = await userSuInfoDB.getSuInfo(userID);
 
-        const groupCap = whichYear <= 2 ? suPolicyData.y1y2_cap : suPolicyData.y3y4_cap;
-        const currentGroup = whichYear <= 2 ? 'y1y2' : 'y3y4'; 
+        const groupCap = matricYear <= 2 ? suPolicyData.y1y2_cap : suPolicyData.y3y4_cap;
+        const currentGroup = matricYear <= 2 ? 'y1y2' : 'y3y4'; 
 
         const usedSu = userSuInfoData?.used_su ?? 0;
         const totalSu = userSuInfoData?.total_su ?? suPolicyData.total_su;

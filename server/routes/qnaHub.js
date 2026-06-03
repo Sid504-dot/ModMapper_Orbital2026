@@ -24,6 +24,7 @@ router.get('/', async (req, res) => {
         const modules = await qnaEligibilityDB.getEligibleModules(userID);
         res.json(modules);
     } catch (err) {
+        console.error('Failed to fetch eligible modules:', err);
         res.status(500).json({ error: 'Failed to fetch eligible modules' });
     }
     

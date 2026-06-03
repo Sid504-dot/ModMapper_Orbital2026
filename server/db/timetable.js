@@ -1,7 +1,7 @@
 const supabase = require('./supabase');
 const userSemDB = require('./userSem');
 
-async function getTimetableByUserID(userID, sem) {
+async function getTimetableByUserID(userID) {
     const sem = await userSemDB.getUserSemByUserID(userID);
     return supabase.from('user_timetable').select().eq('user_id', userID).eq('sem_number', sem);
 }

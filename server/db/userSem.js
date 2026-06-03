@@ -1,4 +1,3 @@
-    const supabase = require('./supabase');
     const userProfileDB = require('../db/userProfile');
 
     async function getUserSemByUserID(userID) {
@@ -9,7 +8,7 @@
         const augustOrLater = month >= 8;   
         let sem = temp * 2 + 1;
         if (augustOrLater) sem += 1;
-        
+
         return sem;
     }
 
