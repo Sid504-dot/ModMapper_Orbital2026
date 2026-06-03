@@ -102,7 +102,7 @@ function Dashboard() {
                 <div style={s.navItem}><div style={s.navDot}></div>Q&A Community</div>
 
                 <div style={s.navLabel}>Tools</div>
-                <div style={s.navItem}><div style={s.navDot}></div>S/U Optimiser</div>
+                <div style={s.navItem} onClick={() => navigate('/su-optimiser')}><div style={s.navDot}></div>S/U Optimiser</div>
                 <div style={s.navItem}><div style={s.navDot}></div>Group Finder</div>
 
                 <div style={s.sidebarBottom}>
