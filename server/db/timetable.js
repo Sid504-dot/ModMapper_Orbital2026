@@ -14,7 +14,12 @@ async function upsertTimetableEntry(entryData) {
         .select();
 }
 
+async function getTimetableBySemNumber(semNumber, userID) {
+    return supabase.from('user_timetable').select().eq('sem_number', semNumber).eq('user_id', userID);
+}
+
 module.exports = {
     getTimetableByUserID,
-    upsertTimetableEntry
+    upsertTimetableEntry,
+    getTimetableBySemNumber
 };
