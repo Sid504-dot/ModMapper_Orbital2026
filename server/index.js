@@ -1,11 +1,12 @@
 const cors = require('cors')
 const express = require('express');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const supabase = require('./db/supabase');
 const authRouter = require('./routes/auth');
 const modulesRouter = require('./routes/modules');
 require('./services/cron');
+require('./services/heatMapUpdate');
 const timetableRouter = require('./routes/timetable');
 const suRouter = require('./routes/su');
 
