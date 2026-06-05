@@ -23,6 +23,33 @@ async function getEligibleModules(userID) {
     return [...codes];
 }
 
+async function getPostsForModule(moduleCode) {
+    const { data, error } = await supabase
+        .from('qna_posts')
+        .select('*')
+        .eq('module_code', moduleCode)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        throw new Error(`Error fetching posts: ${error.message}`);
+    }
+    return data;
+}
+
+async function getNumUpvotes(postId) {
+    const { count, error } = await supabase
+        .from('qna_upvotes')
+        .select('post_id', { count: 'exact' , head: true })
+        .eq('post_id', postId);
+
+    if (error) {
+        throw new Error(`Error fetching upvotes: ${error.message}`);
+    }
+    return count;
+}
+
 module.exports = {
-    getEligibleModules
+    getEligibleModules,
+    getPostsForModule,
+    getNumUpvotes
 };
