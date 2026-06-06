@@ -71,7 +71,7 @@ function Login() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        const response = await fetch('https://modmapperorbital2026-production.up.railway.app/auth/login', {
+        const response = await fetch('https://modmapper-orbital2026.onrender.com/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
@@ -87,7 +87,7 @@ function Login() {
 
     const handleForgotPassword = async (e) => {
         e.preventDefault()
-        const response = await fetch('https://modmapperorbital2026-production.up.railway.app/auth/forgot-password', {
+        const response = await fetch('https://modmapper-orbital2026.onrender.com/auth/forgot-password', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })

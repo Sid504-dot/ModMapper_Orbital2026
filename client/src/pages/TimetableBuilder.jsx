@@ -6,7 +6,7 @@ const DAY_LABELS = ['MON', 'TUE', 'WED', 'THU', 'FRI']
 const MODULE_COLOURS = ['#b85c38', '#1a2744', '#3d5a73', '#7a6a5a', '#c9a84c', '#2e3f6f']
 const PX_PER_MIN = 1.6
 const START_HOUR = 8
-const BACKEND = 'https://modmapperorbital2026-production.up.railway.app'
+const BACKEND = 'https://modmapper-orbital2026.onrender.com'
 
 // Time helpers 
 const timeToMins = (t) => parseInt(t.slice(0, 2)) * 60 + parseInt(t.slice(2, 4))

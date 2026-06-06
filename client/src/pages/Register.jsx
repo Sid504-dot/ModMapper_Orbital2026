@@ -34,7 +34,7 @@ function Register() {
             setMessage('Passwords do not match')
             return
         }
-        const response = await fetch('https://modmapperorbital2026-production.up.railway.app/auth/register', {
+        const response = await fetch('https://modmapper-orbital2026.onrender.com/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })

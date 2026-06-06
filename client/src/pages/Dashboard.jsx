@@ -99,7 +99,7 @@ function Dashboard() {
                 <div style={s.navLabel}>Explore</div>
                 <div style={s.navItem} onClick={() => navigate('/modules')}><div style={s.navDot}></div>Module Search</div>
                 <div style={s.navItem}><div style={s.navDot}></div>UE Recommender</div>
-                <div style={s.navItem}><div style={s.navDot}></div>Q&A Community</div>
+                <div style={s.navItem} onClick={() => navigate('/qna-hub')}><div style={s.navDot} />Q&A Community</div>
 
                 <div style={s.navLabel}>Tools</div>
                 <div style={s.navItem} onClick={() => navigate('/su-optimiser')}><div style={s.navDot}></div>S/U Optimiser</div>
