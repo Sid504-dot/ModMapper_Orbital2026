@@ -59,7 +59,7 @@ function ModuleQnA() {
     const navigate = useNavigate()
     const [userEmail] = useState(() => localStorage.getItem('userEmail') || '')
     const [canAnswer, setCanAnswer] = useState(false)
-    const [posts, setPosts] = useState([])
+    const [posts, setPosts] = useState([]) // eslint-disable-line no-unused-vars
     const [loading, setLoading] = useState(true)
     const [question, setQuestion] = useState('')
 
