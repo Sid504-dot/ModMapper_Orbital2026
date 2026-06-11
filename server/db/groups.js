@@ -25,7 +25,7 @@ async function createGroup(groupName, ownerId) {
 async function getGroupsForUser(userId) {
     const { data, error } = await supabase
         .from('group_members')
-        .select('group_id')
+        .select('group_id, groups(name)')
         .eq('user_id', userId)
 
     if (error) {
@@ -179,7 +179,7 @@ async function isGroupMember(groupId, userId) {
     }
     return data !== null;
 }
-    
+
 module.exports = {
     createGroup,
     getGroupsForUser,
