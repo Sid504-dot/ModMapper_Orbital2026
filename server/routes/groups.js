@@ -48,7 +48,8 @@ router.get('/my-groups', async (req, res) => {
     req.user = userID;
 
     try {
-        const groups = await groupsDB.getGroupsForUser(userID);
+        const rows = await groupsDB.getGroupsForUser(userID);
+        const groups = rows.map(r => ({ group_id: r.group_id, name: r.groups.name }));
         res.json(groups);
     } catch (err) {
         console.error('Failed to fetch groups:', err);
