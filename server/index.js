@@ -10,6 +10,9 @@ require('./services/heatMapUpdate');
 const timetableRouter = require('./routes/timetable');
 const suRouter = require('./routes/su');
 const heatMapGetRouter = require('./routes/heatMap');
+const groupsRouter = require('./routes/groups');
+const groupFreeFinderRouter = require('./routes/groupFreeFinder');
+
 
 app.use(express.json());
 app.use(cors({ origin: '*' }))
@@ -18,6 +21,9 @@ app.use('/modules', modulesRouter);
 app.use('/timetable', timetableRouter);
 app.use('/su', suRouter);
 app.use('/heatmap', heatMapGetRouter);
+app.use('/api', groupsRouter);
+app.use('/api', groupFreeFinderRouter);
+
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

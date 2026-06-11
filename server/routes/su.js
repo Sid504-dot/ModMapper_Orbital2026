@@ -26,15 +26,7 @@ router.get('/', async (req, res) => {
         req.user = userID;
         let matricYear = 1;
         const sem = await userSemDB.getUserSemByUserID(userID);
-        if (sem <=2) {
-            matricYear = 1;
-        } else if (sem <=4) {
-            matricYear = 2;
-        } else if (sem <=6) {
-            matricYear = 3;
-        } else {
-            matricYear = 4;
-        }
+        matricYear = Math.ceil(sem/2) + sem % 2;
         
         const suPolicyData = await suPolicy.getSuPolicy(matricYear);
         const userSuInfoData = await userSuInfoDB.getSuInfo(userID);

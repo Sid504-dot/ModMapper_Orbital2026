@@ -3,19 +3,32 @@ const userSemDB = require('./userSem');
 
 async function getTimetableByUserID(userID) {
     const sem = await userSemDB.getUserSemByUserID(userID);
-    return supabase.from('user_timetable').select().eq('user_id', userID).eq('sem_number', sem);
+    const { data, error } = await supabase.from('user_timetable')
+        .select().eq('user_id', userID).eq('sem_number', sem).maybeSingle();
+    if (error) {
+        throw new Error(`getTimetableByUserID failed: ${error.message}`, { cause: error });
+    }
+    return data;
 }
 
 async function upsertTimetableEntry(entryData) {
     const sem = await userSemDB.getUserSemByUserID(entryData.user_id);
     entryData.sem_number = sem;
-    return supabase.from('user_timetable')
+    const { data, error } = await supabase.from('user_timetable')
         .upsert(entryData, { onConflict: 'user_id,sem_number' })
         .select();
+    if (error) {
+        throw new Error(`upsertTimetableEntry failed: ${error.message}`, { cause: error });
+    }
+    return data;
 }
 
 async function getTimetableBySemNumber(semNumber, userID) {
-    return supabase.from('user_timetable').select().eq('sem_number', semNumber).eq('user_id', userID);
+    const { data, error } = await supabase.from('user_timetable').select().eq('sem_number', semNumber).eq('user_id', userID);
+    if (error) {
+        throw new Error(`getTimetableBySemNumber failed: ${error.message}`, { cause: error });
+    }
+    return data;
 }
 
 module.exports = {
