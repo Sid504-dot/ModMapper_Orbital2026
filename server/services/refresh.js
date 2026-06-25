@@ -8,6 +8,10 @@ async function processEachModule(module, existingMap) {
     const title = module.title;
     const fullData = await nusmods.moduleGetData(module.moduleCode);
     const semesterData = fullData.semesterData;
+    const description = module.description;        
+    const prereqTree = module.prereqTree;          
+    const preclusion = module.preclusion;          
+    const fulReq = module.fulfillRequirements;     
     const cachedAt = new Date().toISOString();
 
     if (existingModule) {
@@ -18,6 +22,10 @@ async function processEachModule(module, existingMap) {
                 semesters: semesterData,
                 cached_at: cachedAt,
                 is_su_eligible: fullData.attributes?.su ?? null,
+                description: description,
+                prereq_tree: prereqTree,
+                preclusion: preclusion,
+                fulfill_requirements: fulReq
             });
             console.log(`Updated module: ${moduleCode}`);
         } else {
@@ -27,6 +35,10 @@ async function processEachModule(module, existingMap) {
                 semesters: existingModule.semesters,
                 cached_at: cachedAt,
                 is_su_eligible: fullData.attributes?.su ?? null,
+                description: description,
+                prereq_tree: prereqTree,
+                preclusion: preclusion,
+                fulfill_requirements: fulReq
             });
             console.log(`Updated cache timestamp for module: ${moduleCode}`);
         }} else {
@@ -36,6 +48,10 @@ async function processEachModule(module, existingMap) {
             semesters: semesterData,
             cached_at: cachedAt,
             is_su_eligible: fullData.attributes?.su ?? null,
+            description: description,
+            prereq_tree: prereqTree,
+            preclusion: preclusion,
+            fulfill_requirements: fulReq
         });
         console.log(`Inserted new module: ${moduleCode}`);
     }
