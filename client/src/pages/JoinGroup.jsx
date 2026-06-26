@@ -30,6 +30,7 @@ function JoinGroup() {
         }
     }
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         const token = localStorage.getItem('token')
         if (!token) {

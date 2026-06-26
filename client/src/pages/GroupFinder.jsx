@@ -135,6 +135,7 @@ function GroupFinder() {
 
     // Fetch groups on mount — useEffect because it's async and has a side effect (network request  and state update)
     // Empty dependency array [] means it runs once when the component first mounts
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         fetchMyGroups()
     }, [])
