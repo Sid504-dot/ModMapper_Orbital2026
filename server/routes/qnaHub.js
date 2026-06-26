@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
 });
 
 
-router.get('/qnahub/:moduleCode/posts', async (req, res) => {
+router.get('/:moduleCode/posts', async (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
         return res.status(401).json({ error: 'Unauthorized' });
@@ -72,7 +72,7 @@ router.get('/qnahub/:moduleCode/posts', async (req, res) => {
     
 });
 
-router.post('/qnahub/:moduleCode/posts', async (req, res) => {
+router.post('/:moduleCode/posts', async (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
         return res.status(401).json({ error: 'Unauthorized' });
@@ -154,7 +154,7 @@ router.post('/qnahub/:moduleCode/posts', async (req, res) => {
     
 });
 
-router.delete('/qnahub/posts/:postId', async (req, res) => {
+router.delete('/posts/:postId', async (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
         return res.status(401).json({ error: 'Unauthorized' });
@@ -205,7 +205,7 @@ router.delete('/qnahub/posts/:postId', async (req, res) => {
 });
 
 
-router.post('/qnahub/posts/:id/upvote', async (req, res) => {
+router.post('/posts/:id/upvote', async (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
         return res.status(401).json({ error: 'Unauthorized' });
