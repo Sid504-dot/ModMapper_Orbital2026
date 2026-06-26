@@ -7,6 +7,8 @@ import TimetableBuilder from './pages/TimetableBuilder'
 import SUOptimiser from './pages/SUOptimiser'
 import QnAHub from './pages/QnAHub'
 import ModuleQnA from './pages/ModuleQnA'
+import GroupFinder from './pages/GroupFinder'
+import JoinGroup from './pages/JoinGroup'
 
 function App() {
   return (
@@ -20,6 +22,8 @@ function App() {
         <Route path="/su-optimiser" element={<SUOptimiser />} />
         <Route path="/qna-hub" element={<QnAHub />} />
         <Route path="/qna-hub/:moduleCode" element={<ModuleQnA />} />
+        <Route path="/group-finder" element={<GroupFinder />} />
+        <Route path="/group-finder/join/:inviteToken" element={<JoinGroup />} />
       </Routes>
     </BrowserRouter>
   )

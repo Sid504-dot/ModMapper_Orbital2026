@@ -85,7 +85,7 @@ function QnAHub() {
                 <div style={s.navLabel}>Explore</div>
                 <div style={s.navItem} onClick={() => navigate('/modules')}><div style={s.navDot} />Module Search</div>
                 <div style={s.navItem}><div style={s.navDot} />UE Recommender</div>
-                <div style={s.navItemActive}><div style={s.navDotActive} />NUS Q&amp;A Community</div>
+                <div style={s.navItemActive}><div style={s.navDotActive} />Q&amp;A Community</div>
 
                 <div style={s.navLabel}>Tools</div>
                 <div style={s.navItem} onClick={() => navigate('/su-optimiser')}><div style={s.navDot} />S/U Optimiser</div>
@@ -107,7 +107,7 @@ function QnAHub() {
 
             {/* Main content */}
             <div style={s.main}>
-                <div style={s.pageTitle}>NUS Q&amp;A Community</div>
+                <div style={s.pageTitle}>Q&amp;A Community</div>
                 <div style={s.pageSub}>Search any module to view or ask questions</div>
 
                 <div style={s.searchRow}>

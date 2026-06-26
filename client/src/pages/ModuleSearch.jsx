@@ -104,11 +104,11 @@ function ModuleSearch() {
                 <div style={s.navLabel}>Explore</div>
                 <div style={s.navItemActive}><div style={s.navDotActive} />Module Search</div>
                 <div style={s.navItem}><div style={s.navDot} />UE Recommender</div>
-                <div style={s.navItem}><div style={s.navDot} />Q&amp;A Community</div>
+                <div style={s.navItem} onClick={() => navigate('/qna-hub')}><div style={s.navDot} />Q&amp;A Community</div>
 
                 <div style={s.navLabel}>Tools</div>
                 <div style={s.navItem} onClick={() => navigate('/su-optimiser')}><div style={s.navDot} />S/U Optimiser</div>
-                <div style={s.navItem}><div style={s.navDot} />Group Finder</div>
+                <div style={s.navItem} onClick={() => navigate('/group-finder')}><div style={s.navDot} />Group Finder</div>
 
                 <div style={s.sidebarBottom}>
                     <div style={s.userPill}>
