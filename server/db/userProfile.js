@@ -1,7 +1,7 @@
 const supabase = require('./supabase');
 
 async function getUserProfile(userID) {
-    const { data, error } = await supabase.from('user_profile').select().eq('user_id', userID).single();
+    const { data, error } = await supabase.from('user_profile').select().eq('user_id', userID).maybeSingle();
     if (error) {
         throw new Error(`Error fetching user profile: ${error.message}`);
     }
