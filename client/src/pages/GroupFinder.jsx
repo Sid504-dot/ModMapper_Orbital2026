@@ -109,11 +109,7 @@ function GroupFinder() {
         if (!token) navigate('/login')
     }, [navigate])
 
-    // Fetch groups on mount — useEffect because it's async and has a side effect (network request  and state update)
-    // Empty dependency array [] means it runs once when the component first mounts
-    useEffect(() => {
-        fetchMyGroups()
-    }, [])
+
 
     // Helper that returns headers for every authenticated request
     // Bearer token tells the backend who the user is
@@ -136,6 +132,13 @@ function GroupFinder() {
 
 
     }
+
+    // Fetch groups on mount — useEffect because it's async and has a side effect (network request  and state update)
+    // Empty dependency array [] means it runs once when the component first mounts
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        fetchMyGroups()
+    }, [])
 
     // POST /api/create — creates a new group with the typed name
     const handleCreateGroup = async () => {

@@ -8,16 +8,7 @@ function JoinGroup() {
     const navigate = useNavigate()
     const [status, setStatus] = useState('joining') // 'joining', 'success', 'already', 'error'
 
-    useEffect(() => {
-        const token = localStorage.getItem('token')
-        if (!token) {
-            // Save the invite token so we can resume after login
-            localStorage.setItem('pendingJoin', inviteToken)
-            navigate('/login')
-            return
-        }
-        joinGroup(token)
-    }, [inviteToken])
+
 
     // POST /api/join-group — sends the invite token to the backend
     // Backend resolves token → group ID → creates a pending member row
@@ -38,6 +29,18 @@ function JoinGroup() {
             setStatus('error')
         }
     }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        const token = localStorage.getItem('token')
+        if (!token) {
+            // Save the invite token so we can resume after login
+            localStorage.setItem('pendingJoin', inviteToken)
+            navigate('/login')
+            return
+        }
+        joinGroup(token)
+    }, [inviteToken])
 
     const page = {
         display: 'flex', minHeight: '100vh', background: '#fdf8f2',
