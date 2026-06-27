@@ -218,7 +218,6 @@ function SUOptimiser() {
                 <div style={s.navLabel}>Tools</div>
                 <div style={s.navItemActive}><div style={s.navDotActive} />S/U Optimiser</div>
                 <div style={s.navItem} onClick={() => navigate('/group-finder')}><div style={s.navDot} />Group Finder</div>
-                <div style={s.navItem} onClick={() => navigate('/bidding-heatmap')}><div style={s.navDot}></div>Bidding Heatmap</div>
 
                 <div style={s.sidebarBottom}>
                     <div style={s.userPill}>

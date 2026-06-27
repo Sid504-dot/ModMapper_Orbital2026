@@ -284,7 +284,6 @@ function GroupFinder() {
                 <div style={s.navLabel}>Tools</div>
                 <div style={s.navItem} onClick={() => navigate('/su-optimiser')}><div style={s.navDot} />S/U Optimiser</div>
                 <div style={s.navItemActive}><div style={s.navDotActive} />Group Finder</div>
-                <div style={s.navItem} onClick={() => navigate('/bidding-heatmap')}><div style={s.navDot}></div>Bidding Heatmap</div>
 
                 <div style={s.sidebarBottom}>
                     <div style={s.userPill}>
