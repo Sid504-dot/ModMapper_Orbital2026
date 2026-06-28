@@ -9,6 +9,7 @@ import QnAHub from './pages/QnAHub'
 import ModuleQnA from './pages/ModuleQnA'
 import GroupFinder from './pages/GroupFinder'
 import JoinGroup from './pages/JoinGroup'
+import BiddingHeatmap from './pages/BiddingHeatmap'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/qna-hub/:moduleCode" element={<ModuleQnA />} />
         <Route path="/group-finder" element={<GroupFinder />} />
         <Route path="/group-finder/join/:inviteToken" element={<JoinGroup />} />
+        <Route path="/bidding-heatmap" element={<BiddingHeatmap />} />
       </Routes>
     </BrowserRouter>
   )
