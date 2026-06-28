@@ -150,8 +150,10 @@ function TimetableBuilder() {
                 return r.json()
             })
             .then(data => {
-                if (!data || !data.length) return
-                const saved = data[0].timetable_data
+                if (!data) return
+                const row = Array.isArray(data) ? data[0] : data
+                if (!row) return
+                const saved = row.timetable_data
                 if (saved?.addedModules) setAddedModules(saved.addedModules)
                 if (saved?.selectedSlots) setSelectedSlots(saved.selectedSlots)
             })
