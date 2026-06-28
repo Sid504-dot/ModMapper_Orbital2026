@@ -135,9 +135,25 @@ function GroupFinder() {
 
     // Fetch groups on mount — useEffect because it's async and has a side effect (network request  and state update)
     // Empty dependency array [] means it runs once when the component first mounts
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
-        fetchMyGroups()
+        let active = true
+        const load = async () => {
+            try {
+                const res = await fetch(`${BACKEND}/api/my-groups`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    },
+                })
+                if (!res.ok || !active) return
+                const data = await res.json()
+                if (active) setGroups(data)
+            } catch (err) {
+                console.error('Failed to fetch groups:', err)
+            }
+        }
+        load()
+        return () => { active = false }
     }, [])
 
     // POST /api/create — creates a new group with the typed name
