@@ -76,17 +76,14 @@ const modules = [
 function Dashboard() {
     const navigate = useNavigate()
     const [userEmail] = useState(() => localStorage.getItem('userEmail') || '')
-    const [showMatricModal, setShowMatricModal] = useState(false)
+    const [showMatricModal, setShowMatricModal] = useState(() => !localStorage.getItem('matricYearSet'))
     const [matricYear, setMatricYear] = useState(new Date().getFullYear())
     const [savingMatric, setSavingMatric] = useState(false)
     const [matricError, setMatricError] = useState('')
 
     useEffect(() => {
         const token = localStorage.getItem('token')
-        if (!token) { navigate('/login'); return }
-        // Show modal if user hasn't set matric year yet
-        const matricSet = localStorage.getItem('matricYearSet')
-        if (!matricSet) setShowMatricModal(true)
+        if (!token) navigate('/login')
     }, [navigate])
 
     const handleSaveMatricYear = async () => {
