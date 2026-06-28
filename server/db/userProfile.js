@@ -9,10 +9,34 @@ async function getUserProfile(userID) {
 }
 
 async function upsertUserProfile(userID, matricYear) {
-    const { data, error } = await supabase.from('user_profile').upsert({ user_id: userID, start_matric_year: matricYear }, { onConflict: 'user_id' }).select();
-    if (error) {
-        throw new Error(`Error upserting user profile: ${error.message}`);
+    const { data: existing, error: selErr } = await supabase
+        .from('user_profile')
+        .select('user_id')
+        .eq('user_id', userID)
+        .maybeSingle();
+
+    if (selErr) {
+        throw new Error(`Error checking user profile: ${selErr.message}`);
     }
+
+    const query = existing
+        ? supabase
+            .from('user_profile')
+            .update({ start_matric_year: matricYear })
+            .eq('user_id', userID)
+        : supabase
+            .from('user_profile')
+            .insert({
+                user_id: userID,
+                start_matric_year: matricYear
+            });
+
+    const { data, error } = await query.select();
+
+    if (error) {
+        throw new Error(`Error saving user profile: ${error.message}`);
+    }
+
     return data;
 }
 

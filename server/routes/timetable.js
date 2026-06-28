@@ -23,6 +23,13 @@ router.get('/', async (req, res) => {
         const data = await timetableDB.getTimetableByUserID(userID);
         res.json(data);
     } catch (err) {
+        if (
+            err.message === 'Matriculation year not set' ||
+            err.message === 'Semester not available'
+        ) {
+            return res.status(400).json({ error: err.message });
+        }
+
         return res.status(500).json({ error: err.message });
     }
 });
