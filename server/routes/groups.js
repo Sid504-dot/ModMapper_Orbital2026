@@ -49,7 +49,7 @@ router.get('/my-groups', async (req, res) => {
 
     try {
         const rows = await groupsDB.getGroupsForUser(userID);
-        const groups = rows.map(r => ({ group_id: r.group_id, name: r.groups.name }));
+        const groups = rows.map(r => ({ group_id: r.group_id, name: r.groups.name, owner_id: r.groups.owner_id }));
         res.json(groups);
     } catch (err) {
         console.error('Failed to fetch groups:', err);
@@ -108,7 +108,7 @@ router.post('/get-out-of-group', async (req, res) => {
 
     try {
         if (await groupsDB.isGroupOwner(groupId, userID)) {
-            await groupsDB.updateGroupOwner(groupId);
+            await groupsDB.updateGroupOwner(groupId, userID);
         }
         await groupsDB.removeGroupMember(groupId, userID);
         res.json({ success: true });
@@ -179,5 +179,39 @@ router.get('/send-invite/:groupId', async (req, res) => {
         res.status(500).json({ error: 'Failed to get invite token' });
     }
 });
+
+router.get('/groups/:groupId/members', async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    const {
+        data: { user },
+        error: authError
+    } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userID = user.id;
+    const groupId = req.params.groupId;
+
+    try {
+        if (!await groupsDB.isGroupMember(groupId, userID)) {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+
+        const members = await groupsDB.getGroupMembers(groupId);
+        res.json(members);
+    } catch (err) {
+        console.error('Failed to fetch group members:', err);
+        res.status(500).json({ error: 'Failed to fetch group members' });
+    }
+});
+
 
 module.exports = router;    
