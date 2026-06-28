@@ -14,7 +14,7 @@ const groupsRouter = require('./routes/groups');
 const groupFreeFinderRouter = require('./routes/groupFreeFinder');
 const prereqTreeRouter = require('./routes/prereqTree');
 const ueReccomenderRouter = require('./routes/ueRecommender');
-
+const qnaHubRouter = require('./routes/qnaHub');
 
 app.use(express.json());
 app.use(cors({ origin: '*' }))
@@ -27,6 +27,7 @@ app.use('/api', groupsRouter);
 app.use('/api', groupFreeFinderRouter);
 app.use('/prereqTree', prereqTreeRouter);
 app.use('/ueReccomender', ueReccomenderRouter);
+app.use('/qnahub',qnaHubRouter)
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
