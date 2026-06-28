@@ -25,7 +25,7 @@ async function createGroup(groupName, ownerId) {
 async function getGroupsForUser(userId) {
     const { data, error } = await supabase
         .from('group_members')
-        .select('group_id, groups(name)')
+        .select('group_id, groups(name, owner_id)')
         .eq('user_id', userId)
 
     if (error) {

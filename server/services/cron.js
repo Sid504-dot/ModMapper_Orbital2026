@@ -1,4 +1,5 @@
 const refresh = require('./refresh');
+const embedding = require('./embeddings');
 const cron = require('node-cron');
 
 cron.schedule('0 2 * * *', () => {
@@ -8,9 +9,11 @@ cron.schedule('0 2 * * *', () => {
     || (date >= 15 && month === 12) || (date <= 25 && month === 1)) {
         console.log('Running daily module refresh at 2 AM');
         refresh.refreshModules();
+        embedding.syncModuleEmbeddings();
     } else if (date === 1) {
         console.log('Running daily module refresh at 2 AM');
         refresh.refreshModules();
+        embedding.syncModuleEmbeddings();
     }
 });
 

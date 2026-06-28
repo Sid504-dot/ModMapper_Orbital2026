@@ -53,6 +53,16 @@ const s = {
     quickItem: { padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '0.5px solid #d4c4a8' },
     quickLabel: { fontSize: '13px', color: '#1f1a16' },
     quickVal: { fontSize: '12px', fontFamily: "'JetBrains Mono', monospace", color: '#7a6a5a' },
+
+    // Matric year onboarding modal
+    modalBackdrop: { position: 'fixed', inset: 0, background: 'rgba(26,39,68,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 },
+    modalCard: { background: '#fdf8f2', border: '0.5px solid #d4c4a8', borderRadius: '12px', padding: '32px 36px', maxWidth: '420px', width: '90%' },
+    modalTitle: { fontSize: '18px', fontWeight: '600', color: '#1a2744', marginBottom: '6px' },
+    modalSub: { fontSize: '13px', color: '#7a6a5a', marginBottom: '20px', lineHeight: 1.5 },
+    modalLabel: { fontSize: '12px', fontWeight: '500', color: '#1a2744', marginBottom: '6px', display: 'block' },
+    modalSelect: { width: '100%', padding: '10px 12px', border: '0.5px solid #d4c4a8', borderRadius: '6px', fontSize: '13px', background: '#fff', color: '#1a2744', outline: 'none', fontFamily: 'inherit', marginBottom: '20px', cursor: 'pointer' },
+    modalBtn: { width: '100%', padding: '11px', background: '#b85c38', color: '#fdf8f2', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' },
+    modalError: { fontSize: '12px', color: '#b71c1c', marginTop: '8px', textAlign: 'center' },
 }
 
 const modules = [
@@ -66,15 +76,44 @@ const modules = [
 function Dashboard() {
     const navigate = useNavigate()
     const [userEmail] = useState(() => localStorage.getItem('userEmail') || '')
+    const [showMatricModal, setShowMatricModal] = useState(() => !localStorage.getItem('matricYearSet'))
+    const [matricYear, setMatricYear] = useState(new Date().getFullYear())
+    const [savingMatric, setSavingMatric] = useState(false)
+    const [matricError, setMatricError] = useState('')
 
     useEffect(() => {
         const token = localStorage.getItem('token')
-        if (!token) { navigate('/login') }
+        if (!token) navigate('/login')
     }, [navigate])
 
+    const handleSaveMatricYear = async () => {
+        setSavingMatric(true)
+        setMatricError('')
+        try {
+            const res = await fetch('https://modmapper-orbital2026.onrender.com/su/userProfile', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                },
+                body: JSON.stringify({ matricYear: Number(matricYear) }),
+            })
+            if (!res.ok) {
+                setMatricError('Could not save — please try again')
+                return
+            }
+            localStorage.setItem('matricYearSet', 'true')
+            setShowMatricModal(false)
+        } catch {
+            setMatricError('Network error — please try again')
+        } finally {
+            setSavingMatric(false)
+        }
+    }
 
     const handleLogout = () => {
         localStorage.removeItem('token')
+        localStorage.removeItem('matricYearSet')
         navigate('/login')
     }
 
@@ -82,6 +121,38 @@ function Dashboard() {
 
     return (
         <div style={s.page}>
+
+            {/* One-time matric year onboarding modal */}
+            {showMatricModal && (
+                <div style={s.modalBackdrop}>
+                    <div style={s.modalCard}>
+                        <div style={s.modalTitle}>Welcome to ModMapper</div>
+                        <div style={s.modalSub}>
+                            To personalise your experience and unlock features like S/U Optimiser
+                            and Group Finder, tell us when you matriculated at NUS.
+                        </div>
+                        <label style={s.modalLabel}>Matriculation year</label>
+                        <select
+                            style={s.modalSelect}
+                            value={matricYear}
+                            onChange={e => setMatricYear(e.target.value)}
+                        >
+                            {[2026, 2025, 2024, 2023, 2022, 2021, 2020].map(y => (
+                                <option key={y} value={y}>{y}</option>
+                            ))}
+                        </select>
+                        <button
+                            style={s.modalBtn}
+                            onClick={handleSaveMatricYear}
+                            disabled={savingMatric}
+                        >
+                            {savingMatric ? 'Saving...' : 'Continue'}
+                        </button>
+                        {matricError && <div style={s.modalError}>{matricError}</div>}
+                    </div>
+                </div>
+            )}
+
             <div style={s.sidebar}>
                 <div style={s.logoRow}>
                     <div style={s.logoIcon}>
@@ -104,6 +175,7 @@ function Dashboard() {
                 <div style={s.navLabel}>Tools</div>
                 <div style={s.navItem} onClick={() => navigate('/su-optimiser')}><div style={s.navDot}></div>S/U Optimiser</div>
                 <div style={s.navItem} onClick={() => navigate('/group-finder')}><div style={s.navDot}></div>Group Finder</div>
+                <div style={s.navItem} onClick={() => navigate('/bidding-heatmap')}><div style={s.navDot}></div>Bidding Heatmap</div>
 
                 <div style={s.sidebarBottom}>
                     <div style={s.userPill}>

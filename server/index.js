@@ -12,6 +12,8 @@ const suRouter = require('./routes/su');
 const heatMapGetRouter = require('./routes/heatMap');
 const groupsRouter = require('./routes/groups');
 const groupFreeFinderRouter = require('./routes/groupFreeFinder');
+const prereqTreeRouter = require('./routes/prereqTree');
+const ueReccomenderRouter = require('./routes/ueRecommender');
 
 
 app.use(express.json());
@@ -23,7 +25,8 @@ app.use('/su', suRouter);
 app.use('/heatmap', heatMapGetRouter);
 app.use('/api', groupsRouter);
 app.use('/api', groupFreeFinderRouter);
-
+app.use('/prereqTree', prereqTreeRouter);
+app.use('/ueReccomender', ueReccomenderRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

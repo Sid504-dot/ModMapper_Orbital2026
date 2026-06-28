@@ -8,36 +8,34 @@ function JoinGroup() {
     const navigate = useNavigate()
     const [status, setStatus] = useState('joining') // 'joining', 'success', 'already', 'error'
 
+
+
     useEffect(() => {
         const token = localStorage.getItem('token')
         if (!token) {
-            // Save the invite token so we can resume after login
             localStorage.setItem('pendingJoin', inviteToken)
             navigate('/login')
             return
         }
-        joinGroup(token)
-    }, [inviteToken])
-
-    // POST /api/join-group — sends the invite token to the backend
-    // Backend resolves token → group ID → creates a pending member row
-    const joinGroup = async (token) => {
-        try {
-            const res = await fetch(`${BACKEND}/api/join-group`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ inviteToken }),
-            })
-            if (res.status === 400) { setStatus('already'); return }
-            if (!res.ok) { setStatus('error'); return }
-            setStatus('success')
-        } catch {
-            setStatus('error')
+        const join = async () => {
+            try {
+                const res = await fetch(`${BACKEND}/api/join-group`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ inviteToken }),
+                })
+                if (res.status === 400) { setStatus('already'); return }
+                if (!res.ok) { setStatus('error'); return }
+                setStatus('success')
+            } catch {
+                setStatus('error')
+            }
         }
-    }
+        join()
+    }, [inviteToken, navigate])
 
     const page = {
         display: 'flex', minHeight: '100vh', background: '#fdf8f2',

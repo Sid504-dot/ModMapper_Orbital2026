@@ -1,62 +1,64 @@
-    const express = require('express');
-    const router = express.Router();
-    const timetableDB = require('../db/timetable');
-    const supabase = require('../db/supabase');
+const express = require('express');
+const router = express.Router();
+const timetableDB = require('../db/timetable');
+const supabase = require('../db/supabase');
 
-    router.get('/', async (req, res) => {
-        const token = req.headers.authorization.split(' ')[1];
-        
-        if (!token) {
-            return res.status(401).json({ error: 'Unauthorized 1' });
-        }
-        
-        const { data: { user }} = await supabase.auth.getUser(token);
-        const userID = user.id;
-        
-        if(!userID) {
-            return res.status(401).json({ error: 'Unauthorized 2' });
-        }
+router.get('/', async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
 
-        req.user = userID;
-        const sem = req.sem;
+    const token = authHeader.split(' ')[1];
+    const { data: { user } } = await supabase.auth.getUser(token);
 
-        const { data, error } = await timetableDB.getTimetableByUserID(userID, sem);
-        
-        if (error) {
-            return res.status(500).json({ error: 'Failed to fetch timetable 1' });
-        }
+    if (!user?.id) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
 
+    const userID = user.id;
+    req.user = userID;
+
+    try {
+        const data = await timetableDB.getTimetableByUserID(userID);
         res.json(data);
-
-    })
-
-    router.post('/', async (req, res) => {
-        const token = req.headers.authorization.split(' ')[1];
-        
-        if (!token) {
-            return res.status(401).json({ error: 'Unauthorized 3' });
-        }
-        
-        const { data: { user }} = await supabase.auth.getUser(token);
-        const userID = user.id;
-        
-        if(!userID) {
-            return res.status(401).json({ error: 'Unauthorized 4' });
+    } catch (err) {
+        if (
+            err.message === 'Matriculation year not set' ||
+            err.message === 'Semester not available'
+        ) {
+            return res.status(400).json({ error: err.message });
         }
 
-        req.user = userID;
+        return res.status(500).json({ error: err.message });
+    }
+});
 
-        const entryData = req.body;
-        entryData.user_id = userID;
+router.post('/', async (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
 
-        const { data, error } = await timetableDB.upsertTimetableEntry(entryData);
+    const token = authHeader.split(' ')[1];
+    const { data: { user } } = await supabase.auth.getUser(token);
 
-        if (error) {
-            return res.status(500).json({ error: error.message });
-        }
+    if (!user?.id) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
 
+    const userID = user.id;
+    req.user = userID;
+
+    const entryData = req.body;
+    entryData.user_id = userID;
+
+    try {
+        const data = await timetableDB.upsertTimetableEntry(entryData);
         res.json(data);
-    })
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
 
-    module.exports = router;   
-
+module.exports = router;
