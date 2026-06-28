@@ -83,6 +83,41 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.post('/userProfile', async (req,res) => {
+    const token = req.headers.authorization.split(" ")[1];
+
+    if(!token) {
+        return res.status(401).json({error: 'Unauthorized 1'});
+    }
+
+    try {
+        const {data: {user}} = await supabase.auth.getUser(token);
+        
+        const userID = user.id;
+        req.user = userID;
+
+        if(!userID) {
+            return res.status(401).json({error: 'Unauthorized 3'});
+        }
+
+        const {matricYear} = req.body;
+
+        if(!matricYear) {
+            return res.status(400).json({error: 'Matric year is required'});
+        }
+
+        try {
+            const userProfile = await userProfileDB.upsertUserProfile(userID, matricYear);
+            res.json({message: 'User profile updated successfully', userProfile});
+        } catch(error) {
+            console.error('Error updating user profile:', error);
+            res.status(500).json({error: 'Internal Server Error'});
+    }} catch(error) {
+        console.error('Error fetching user:', error);
+        return res.status(401).json({error: 'Unauthorized 2'});
+    }
+});
+
 router.post('/info', async (req, res) => {
     const token = req.headers.authorization.split(" ")[1];
 
