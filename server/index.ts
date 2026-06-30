@@ -30,11 +30,11 @@ app.use('/prereqTree', prereqTreeRouter);
 app.use('/ueReccomender', ueReccomenderRouter);
 app.use('/qnahub',qnaHubRouter)
 
-app.get('/health', (res: Response) => {
+app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 
-app.get('/test-supabase', async (res: Response) => {
+app.get('/test-supabase', async (req: Request, res: Response) => {
   const { data, error } = await supabase.auth.getSession();
   if (error) {
     return res.status(500).json({ error: error.message });

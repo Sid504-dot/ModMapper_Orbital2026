@@ -62,6 +62,8 @@ function ModuleQnA() {
     const [posts, setPosts] = useState([]) // eslint-disable-line no-unused-vars
     const [loading, setLoading] = useState(true)
     const [question, setQuestion] = useState('')
+    const [answer, setAnswer] = useState('')
+    const [submitting, setSubmitting] = useState(false)
 
     // Auth guard
     useEffect(() => {
@@ -69,32 +71,86 @@ function ModuleQnA() {
         if (!token) navigate('/login')
     }, [navigate])
 
-    // Check if user can answer questions for this module
     useEffect(() => {
         const token = localStorage.getItem('token')
         if (!token) return
-        fetch(`${BACKEND}/qnahub`, {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-            .then(r => {
-                if (r.status === 401) { navigate('/login'); return null }
-                if (!r.ok) throw new Error()
-                return r.json()
-            })
-            .then(data => {
-                if (!data) return
-                setCanAnswer(data.includes(moduleCode))
-                setLoading(false)
-            })
-            .catch(() => setLoading(false))
+        let cancelled = false
+        const load = async () => {
+            try {
+                const eligRes = await fetch(`${BACKEND}/qnahub`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+                if (eligRes.status === 401) { navigate('/login'); return }
+                const eligData = await eligRes.json()
+                if (!cancelled) setCanAnswer(eligData.includes(moduleCode))
+
+                const postsRes = await fetch(`${BACKEND}/qnahub/${moduleCode}/posts`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+                if (postsRes.ok && !cancelled) {
+                    const postsData = await postsRes.json()
+                    setPosts(postsData)
+                }
+            } catch (err) {
+                console.error('Failed to load Q&A:', err)
+            } finally {
+                if (!cancelled) setLoading(false)
+            }
+        }
+        load()
+        return () => { cancelled = true }
     }, [moduleCode, navigate])
 
     // Posts fetch goes here once Sid ships GET /qnahub/:moduleCode/posts
 
-    const handleSubmitQuestion = () => {
-        // POST /qnahub/:moduleCode/posts goes here once Sid's endpoint is ready
-        // for now just clear the box
-        setQuestion('')
+    const refetchPosts = async () => {
+        const token = localStorage.getItem('token')
+        const res = await fetch(`${BACKEND}/qnahub/${moduleCode}/posts`, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.ok) setPosts(await res.json())
+    }
+
+    const handleSubmitQuestion = async () => {
+        if (!question.trim()) return
+        setSubmitting(true)
+        try {
+            const res = await fetch(`${BACKEND}/qnahub/${moduleCode}/posts`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                },
+                body: JSON.stringify({ type: 'question', content: question.trim(), parent_id: null }),
+            })
+            if (res.ok) {
+                setQuestion('')
+                await refetchPosts()
+            }
+        } finally {
+            setSubmitting(false)
+        }
+    }
+
+    const handleSubmitAnswer = async (parentId) => {
+        if (!answer.trim()) return
+        setSubmitting(true)
+        try {
+            const res = await fetch(`${BACKEND}/qnahub/${moduleCode}/posts`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                },
+                body: JSON.stringify({ type: 'answer', content: answer.trim(), parent_id: parentId }),
+            })
+            if (res.ok) {
+                setAnswer('')
+                await refetchPosts()
+            }
+        } finally {
+            setSubmitting(false)
+        }
     }
 
     const initials = userEmail ? userEmail.slice(0, 2).toUpperCase() : 'MM'
@@ -174,7 +230,51 @@ function ModuleQnA() {
                                 </div>
                             ) : (
                                 posts.map(post => (
-                                    <div key={post.id}>{post.content}</div>
+                                    <div key={post.id} style={{
+                                        background: '#fff',
+                                        border: '0.5px solid #d4c4a8',
+                                        borderRadius: '8px',
+                                        padding: '14px 18px',
+                                        marginBottom: '12px',
+                                    }}>
+                                        <div style={{ fontSize: '11px', fontFamily: "'JetBrains Mono', monospace", color: '#7a6a5a', marginBottom: '6px' }}>
+                                            {post.author_email}
+                                        </div>
+                                        <div style={{ fontSize: '13px', color: '#1a2744', marginBottom: '10px', whiteSpace: 'pre-wrap' }}>
+                                            {post.content}
+                                        </div>
+                                        {post.replies && post.replies.length > 0 && (
+                                            <div style={{ marginTop: '10px', paddingLeft: '14px', borderLeft: '2px solid #d4c4a8' }}>
+                                                {post.replies.map(reply => (
+                                                    <div key={reply.id} style={{ marginBottom: '8px' }}>
+                                                        <div style={{ fontSize: '11px', fontFamily: "'JetBrains Mono', monospace", color: '#b85c38', marginBottom: '4px' }}>
+                                                            {reply.author_email}
+                                                        </div>
+                                                        <div style={{ fontSize: '12px', color: '#1f1a16', whiteSpace: 'pre-wrap' }}>
+                                                            {reply.content}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {canAnswer && (
+                                            <div style={{ marginTop: '10px', display: 'flex', gap: '8px' }}>
+                                                <input
+                                                    placeholder="Reply with an answer..."
+                                                    value={answer}
+                                                    onChange={e => setAnswer(e.target.value)}
+                                                    style={{ flex: 1, padding: '6px 10px', border: '0.5px solid #d4c4a8', borderRadius: '4px', fontSize: '12px', fontFamily: 'inherit', outline: 'none' }}
+                                                />
+                                                <button
+                                                    onClick={() => handleSubmitAnswer(post.id)}
+                                                    disabled={submitting || !answer.trim()}
+                                                    style={{ ...s.submitBtn, fontSize: '11px', padding: '5px 12px' }}
+                                                >
+                                                    Answer
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 ))
                             )}
                         </div>
@@ -192,7 +292,7 @@ function ModuleQnA() {
                                 <button
                                     style={s.submitBtn}
                                     onClick={handleSubmitQuestion}
-                                    disabled={!question.trim()}
+                                    disabled={submitting || !question.trim()}
                                 >
                                     Post Question
                                 </button>

@@ -150,8 +150,10 @@ function TimetableBuilder() {
                 return r.json()
             })
             .then(data => {
-                if (!data || !data.length) return
-                const saved = data[0].timetable_data
+                if (!data) return
+                const row = Array.isArray(data) ? data[0] : data
+                if (!row) return
+                const saved = row.timetable_data
                 if (saved?.addedModules) setAddedModules(saved.addedModules)
                 if (saved?.selectedSlots) setSelectedSlots(saved.selectedSlots)
             })
@@ -328,6 +330,7 @@ function TimetableBuilder() {
                 <div style={s.navLabel}>Tools</div>
                 <div style={s.navItem} onClick={() => navigate('/su-optimiser')}><div style={s.navDot} />S/U Optimiser</div>
                 <div style={s.navItem} onClick={() => navigate('/group-finder')}><div style={s.navDot} />Group Finder</div>
+                <div style={s.navItem} onClick={() => navigate('/bidding-heatmap')}><div style={s.navDot}></div>Bidding Heatmap</div>
 
                 <div style={s.sidebarBottom}>
                     <div style={s.userPill}>
