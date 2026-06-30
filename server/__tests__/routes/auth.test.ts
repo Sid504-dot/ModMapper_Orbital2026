@@ -11,8 +11,17 @@ jest.mock('../../db/supabase', () => ({
     }
 }));
 
-const supabase = require('../../db/supabase');
-const authRouter = require('../../routes/auth');
+import supabase from '../../db/supabase';
+import authRouter from '../../routes/auth';
+
+const mockedSupabase = supabase as unknown as {
+    auth: {
+        signUp: jest.MockedFunction<(args: any) => Promise<any>>;
+        signInWithPassword: jest.MockedFunction<(args: any) => Promise<any>>;
+        resetPasswordForEmail: jest.MockedFunction<(args: any) => Promise<any>>;
+    };
+};
+
 
 // Build a minimal Express app — avoids importing index.js (which starts cron)
 const app = express();
@@ -52,7 +61,7 @@ describe('POST /auth/register', () => {
     });
 
     test('returns 201 and success message on valid registration', async () => {
-        supabase.auth.signUp.mockResolvedValue({
+        mockedSupabase.auth.signUp.mockResolvedValue({
             data: { user: { id: 'abc-123', email: 'user@test.com' } },
             error: null
         });
@@ -67,7 +76,7 @@ describe('POST /auth/register', () => {
     });
 
     test('returns 400 when Supabase returns an error (e.g. duplicate email)', async () => {
-        supabase.auth.signUp.mockResolvedValue({
+        mockedSupabase.auth.signUp.mockResolvedValue({
             data: null,
             error: { message: 'User already registered' }
         });
@@ -81,7 +90,7 @@ describe('POST /auth/register', () => {
     });
 
     test('calls supabase.auth.signUp with correct arguments', async () => {
-        supabase.auth.signUp.mockResolvedValue({
+        mockedSupabase.auth.signUp.mockResolvedValue({
             data: { user: { id: 'abc-123' } },
             error: null
         });
@@ -90,7 +99,7 @@ describe('POST /auth/register', () => {
             .post('/auth/register')
             .send({ email: 'user@test.com', password: 'mypassword' });
 
-        expect(supabase.auth.signUp).toHaveBeenCalledWith({
+        expect(mockedSupabase.auth.signUp).toHaveBeenCalledWith({
             email: 'user@test.com',
             password: 'mypassword'
         });
@@ -129,7 +138,7 @@ describe('POST /auth/login', () => {
     });
 
     test('returns 200 and access_token on successful login', async () => {
-        supabase.auth.signInWithPassword.mockResolvedValue({
+        mockedSupabase.auth.signInWithPassword.mockResolvedValue({
             data: { session: { access_token: 'jwt-token-xyz' } },
             error: null
         });
@@ -144,7 +153,7 @@ describe('POST /auth/login', () => {
     });
 
     test('returns 400 on wrong credentials', async () => {
-        supabase.auth.signInWithPassword.mockResolvedValue({
+        mockedSupabase.auth.signInWithPassword.mockResolvedValue({
             data: null,
             error: { message: 'Invalid login credentials' }
         });
@@ -158,7 +167,7 @@ describe('POST /auth/login', () => {
     });
 
     test('calls supabase.auth.signInWithPassword with correct arguments', async () => {
-        supabase.auth.signInWithPassword.mockResolvedValue({
+        mockedSupabase.auth.signInWithPassword.mockResolvedValue({
             data: { session: { access_token: 'token' } },
             error: null
         });
@@ -167,7 +176,7 @@ describe('POST /auth/login', () => {
             .post('/auth/login')
             .send({ email: 'user@test.com', password: 'mypassword' });
 
-        expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({
+        expect(mockedSupabase.auth.signInWithPassword).toHaveBeenCalledWith({
             email: 'user@test.com',
             password: 'mypassword'
         });
@@ -189,7 +198,7 @@ describe('POST /auth/forgot-password', () => {
     });
 
     test('returns 200 with generic message on success', async () => {
-        supabase.auth.resetPasswordForEmail.mockResolvedValue({ error: null });
+        mockedSupabase.auth.resetPasswordForEmail.mockResolvedValue({ error: null });
 
         const res = await request(app)
             .post('/auth/forgot-password')
@@ -201,7 +210,7 @@ describe('POST /auth/forgot-password', () => {
     });
 
     test('returns 400 if Supabase returns an error', async () => {
-        supabase.auth.resetPasswordForEmail.mockResolvedValue({
+        mockedSupabase.auth.resetPasswordForEmail.mockResolvedValue({
             error: { message: 'Unable to send email' }
         });
 

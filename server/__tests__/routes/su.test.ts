@@ -1,10 +1,8 @@
-const request = require('supertest');
-const express = require('express');
-import { beforeEach, describe, expect, jest, test } from '@jest/globals';
+import request from 'supertest';
+import express from 'express';
+import { beforeEach, afterEach, describe, expect, jest, test } from '@jest/globals';
 
 // Mock ALL external dependencies before requiring the router.
-// supabase is used directly in su.js for auth.getUser — mock it here.
-// All DB modules are mocked to prevent real Supabase calls.
 jest.mock('../../db/supabase', () => ({
     auth: { getUser: jest.fn() }
 }));
@@ -14,58 +12,84 @@ jest.mock('../../db/timetable');
 jest.mock('../../db/userSuInfo');
 jest.mock('../../db/modules');
 
-const supabase     = require('../../db/supabase');
-const suPolicy     = require('../../db/suPolicy');
-const userProfileDB = require('../../db/userProfile');
-const timetableDB  = require('../../db/timetable');
-const userSuInfoDB = require('../../db/userSuInfo');
-const moduleDB     = require('../../db/modules');
-const suRouter     = require('../../routes/su');
+import supabase from '../../db/supabase';
+import * as suPolicy from '../../db/suPolicy';
+import * as userProfileDB from '../../db/userProfile';
+import * as timetableDB from '../../db/timetable';
+import * as userSuInfoDB from '../../db/userSuInfo';
+import * as moduleDB from '../../db/modules';
+import suRouter from '../../routes/su';
 
+const mockGetUser =
+    supabase.auth.getUser as jest.MockedFunction<typeof supabase.auth.getUser>;
+
+const mockGetSuPolicy =
+    suPolicy.getSuPolicy as jest.MockedFunction<typeof suPolicy.getSuPolicy>;
+
+const mockGetUserProfile =
+    userProfileDB.getUserProfile as jest.MockedFunction<typeof userProfileDB.getUserProfile>;
+
+const mockUpsertUserProfile =
+    userProfileDB.upsertUserProfile as jest.MockedFunction<typeof userProfileDB.upsertUserProfile>;
+
+const mockGetTimetableByUserID =
+    timetableDB.getTimetableByUserID as jest.MockedFunction<typeof timetableDB.getTimetableByUserID>;
+
+const mockGetSuInfo =
+    userSuInfoDB.getSuInfo as jest.MockedFunction<typeof userSuInfoDB.getSuInfo>;
+
+const mockUpsertSuInfo =
+    userSuInfoDB.upsertSuInfo as jest.MockedFunction<typeof userSuInfoDB.upsertSuInfo>;
+
+const mockGetSuAbleModulesByCodes =
+    moduleDB.getSuAbleModulesByCodes as jest.MockedFunction<typeof moduleDB.getSuAbleModulesByCodes>;
+    
 const app = express();
 app.use(express.json());
 app.use('/su', suRouter);
 
 const MOCK_USER_ID = 'user-uuid-123';
-const MOCK_TOKEN   = 'valid-jwt-token';
-const AUTH_HEADER  = `Bearer ${MOCK_TOKEN}`;
+const MOCK_TOKEN = 'valid-jwt-token';
+const AUTH_HEADER = `Bearer ${MOCK_TOKEN}`;
+
+afterEach(() => {
+    jest.useRealTimers();
+});
 
 // ─── GET /su ─────────────────────────────────────────────────────────────────
 
 describe('GET /su', () => {
 
     beforeEach(() => {
+        jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] }).setSystemTime(new Date('2026-05-15'));
         jest.clearAllMocks();
         // Default: auth passes for all tests in this block
-        supabase.auth.getUser.mockResolvedValue({
+        mockGetUser.mockResolvedValue({
             data: { user: { id: MOCK_USER_ID } }
-        });
+        } as any);
     });
 
     // ── Auth guard ───────────────────────────────────────────────────────────
 
-    test('returns 500 when Authorization header is missing', async () => {
-        // NOTE: su.js calls req.headers.authorization.split(' ') OUTSIDE the
-        // try-catch, so a missing header throws a TypeError → Express 5 → 500.
-        // This is a known code issue — the test documents actual behavior.
+    test('returns 401 when Authorization header is missing', async () => {
         const res = await request(app).get('/su');
-        expect(res.status).toBe(500);
+        expect(res.status).toBe(401);
     });
 
     // ── Happy path ───────────────────────────────────────────────────────────
 
     test('returns 200 with merged SU data on success', async () => {
-        userProfileDB.getUserProfile.mockResolvedValue({ matric_year: 2024 });
-        suPolicy.getSuPolicy.mockResolvedValue({
+        mockGetUserProfile.mockResolvedValue({ matric_year: 2024 } as any);
+        mockGetSuPolicy.mockResolvedValue({
             total_su: 32, y1y2_cap: 20, y3y4_cap: 12, cohort_start_year: 2024
-        });
-        userSuInfoDB.getSuInfo.mockResolvedValue({ used_su: 4, total_su: 32 });
-        timetableDB.getTimetableByUserID.mockResolvedValue({
+        } as any);
+        mockGetSuInfo.mockResolvedValue({ used_su: 4, total_su: 32 } as any);
+        mockGetTimetableByUserID.mockResolvedValue({
             data: [{ module_code: 'CS1101S', module_name: 'Programming Methodology' }]
-        });
-        moduleDB.getSuAbleModulesByCodes.mockResolvedValue({
+        } as any);
+        mockGetSuAbleModulesByCodes.mockResolvedValue({
             data: [{ module_code: 'CS1101S', is_su_eligible: true }]
-        });
+        } as any);
 
         const res = await request(app)
             .get('/su')
@@ -79,19 +103,18 @@ describe('GET /su', () => {
     });
 
     test('merges is_su_eligible into timetable entries correctly', async () => {
-        userProfileDB.getUserProfile.mockResolvedValue({ matric_year: 2024 });
-        suPolicy.getSuPolicy.mockResolvedValue({ total_su: 32, y1y2_cap: 20, y3y4_cap: 12 });
-        userSuInfoDB.getSuInfo.mockResolvedValue({ used_su: 0, total_su: 32 });
-        timetableDB.getTimetableByUserID.mockResolvedValue({
+        mockGetUserProfile.mockResolvedValue({ matric_year: 2024 } as any);
+        mockGetSuPolicy.mockResolvedValue({ total_su: 32, y1y2_cap: 20, y3y4_cap: 12 } as any);
+        mockGetSuInfo.mockResolvedValue({ used_su: 0, total_su: 32 } as any);
+        mockGetTimetableByUserID.mockResolvedValue({
             data: [
                 { module_code: 'CS1101S' },
-                { module_code: 'LAJ1201' }  // not SU-able, won't appear in suAbleModules
+                { module_code: 'LAJ1201' }
             ]
-        });
-        moduleDB.getSuAbleModulesByCodes.mockResolvedValue({
+        } as any);
+        mockGetSuAbleModulesByCodes.mockResolvedValue({
             data: [{ module_code: 'CS1101S', is_su_eligible: true }]
-            // LAJ1201 absent → should be null
-        });
+        } as any);
 
         const res = await request(app)
             .get('/su')
@@ -104,11 +127,11 @@ describe('GET /su', () => {
     });
 
     test('returns empty modules array when timetable is empty', async () => {
-        userProfileDB.getUserProfile.mockResolvedValue({ matric_year: 2024 });
-        suPolicy.getSuPolicy.mockResolvedValue({ total_su: 32, y1y2_cap: 20, y3y4_cap: 12 });
-        userSuInfoDB.getSuInfo.mockResolvedValue({ used_su: 0, total_su: 32 });
-        timetableDB.getTimetableByUserID.mockResolvedValue({ data: [] });
-        moduleDB.getSuAbleModulesByCodes.mockResolvedValue({ data: [] });
+        mockGetUserProfile.mockResolvedValue({ matric_year: 2024 } as any);
+        mockGetSuPolicy.mockResolvedValue({ total_su: 32, y1y2_cap: 20, y3y4_cap: 12 } as any);
+        mockGetSuInfo.mockResolvedValue({ used_su: 0, total_su: 32 } as any);
+        mockGetTimetableByUserID.mockResolvedValue({ data: [] } as any);
+        mockGetSuAbleModulesByCodes.mockResolvedValue({ data: [] } as any);
 
         const res = await request(app)
             .get('/su')
@@ -119,11 +142,11 @@ describe('GET /su', () => {
     });
 
     test('uses used_su = 0 and total_su from policy when userSuInfo is null', async () => {
-        userProfileDB.getUserProfile.mockResolvedValue({ matric_year: 2024 });
-        suPolicy.getSuPolicy.mockResolvedValue({ total_su: 32, y1y2_cap: 20, y3y4_cap: 12 });
-        userSuInfoDB.getSuInfo.mockResolvedValue(null);  // user hasn't set SU info yet
-        timetableDB.getTimetableByUserID.mockResolvedValue({ data: [] });
-        moduleDB.getSuAbleModulesByCodes.mockResolvedValue({ data: [] });
+        mockGetUserProfile.mockResolvedValue({ matric_year: 2024 } as any);
+        mockGetSuPolicy.mockResolvedValue({ total_su: 32, y1y2_cap: 20, y3y4_cap: 12 } as any);
+        mockGetSuInfo.mockResolvedValue(null as any);
+        mockGetTimetableByUserID.mockResolvedValue({ data: [] } as any);
+        mockGetSuAbleModulesByCodes.mockResolvedValue({ data: [] } as any);
 
         const res = await request(app)
             .get('/su')
@@ -131,19 +154,17 @@ describe('GET /su', () => {
 
         expect(res.status).toBe(200);
         expect(res.body.usedSu).toBe(0);
-        expect(res.body.totalSu).toBe(32);  // falls back to policy total
+        expect(res.body.totalSu).toBe(32);
     });
 
     // ── Year computation ─────────────────────────────────────────────────────
-    // Current date in tests: May 2026 (month = 5)
 
     test('classifies Y1Y2 when matric_year equals current year (temp=0)', async () => {
-        // matric 2026, year 2026, month 5 → temp=0 → whichYear=1 → y1y2
-        userProfileDB.getUserProfile.mockResolvedValue({ matric_year: 2026 });
-        suPolicy.getSuPolicy.mockResolvedValue({ total_su: 32, y1y2_cap: 20, y3y4_cap: 12 });
-        userSuInfoDB.getSuInfo.mockResolvedValue({ used_su: 0, total_su: 32 });
-        timetableDB.getTimetableByUserID.mockResolvedValue({ data: [] });
-        moduleDB.getSuAbleModulesByCodes.mockResolvedValue({ data: [] });
+        mockGetUserProfile.mockResolvedValue({ matric_year: 2026 } as any);
+        mockGetSuPolicy.mockResolvedValue({ total_su: 32, y1y2_cap: 20, y3y4_cap: 12 } as any);
+        mockGetSuInfo.mockResolvedValue({ used_su: 0, total_su: 32 } as any);
+        mockGetTimetableByUserID.mockResolvedValue({ data: [] } as any);
+        mockGetSuAbleModulesByCodes.mockResolvedValue({ data: [] } as any);
 
         const res = await request(app)
             .get('/su')
@@ -154,12 +175,11 @@ describe('GET /su', () => {
     });
 
     test('classifies Y1Y2 when temp=1 and month < 7 (still in Y1)', async () => {
-        // matric 2025, year 2026, month 5 → temp=1, month<7 → whichYear=1 → y1y2
-        userProfileDB.getUserProfile.mockResolvedValue({ matric_year: 2025 });
-        suPolicy.getSuPolicy.mockResolvedValue({ total_su: 32, y1y2_cap: 20, y3y4_cap: 12 });
-        userSuInfoDB.getSuInfo.mockResolvedValue({ used_su: 0, total_su: 32 });
-        timetableDB.getTimetableByUserID.mockResolvedValue({ data: [] });
-        moduleDB.getSuAbleModulesByCodes.mockResolvedValue({ data: [] });
+        mockGetUserProfile.mockResolvedValue({ matric_year: 2025 } as any);
+        mockGetSuPolicy.mockResolvedValue({ total_su: 32, y1y2_cap: 20, y3y4_cap: 12 } as any);
+        mockGetSuInfo.mockResolvedValue({ used_su: 0, total_su: 32 } as any);
+        mockGetTimetableByUserID.mockResolvedValue({ data: [] } as any);
+        mockGetSuAbleModulesByCodes.mockResolvedValue({ data: [] } as any);
 
         const res = await request(app)
             .get('/su')
@@ -168,13 +188,12 @@ describe('GET /su', () => {
         expect(res.body.currentGroup).toBe('y1y2');
     });
 
-    test('classifies Y3Y4 when temp=3 and month >= 7 (Y4)', async () => {
-        // matric 2023, year 2026, month 5 → temp=3, month<7 → whichYear=3 → y3y4
-        userProfileDB.getUserProfile.mockResolvedValue({ matric_year: 2023 });
-        suPolicy.getSuPolicy.mockResolvedValue({ total_su: 32, y1y2_cap: 20, y3y4_cap: 12 });
-        userSuInfoDB.getSuInfo.mockResolvedValue({ used_su: 0, total_su: 32 });
-        timetableDB.getTimetableByUserID.mockResolvedValue({ data: [] });
-        moduleDB.getSuAbleModulesByCodes.mockResolvedValue({ data: [] });
+    test('classifies Y3Y4 when temp=3 and month < 7 (Y3)', async () => {
+        mockGetUserProfile.mockResolvedValue({ matric_year: 2023 } as any);
+        mockGetSuPolicy.mockResolvedValue({ total_su: 32, y1y2_cap: 20, y3y4_cap: 12 } as any);
+        mockGetSuInfo.mockResolvedValue({ used_su: 0, total_su: 32 } as any);
+        mockGetTimetableByUserID.mockResolvedValue({ data: [] } as any);
+        mockGetSuAbleModulesByCodes.mockResolvedValue({ data: [] } as any);
 
         const res = await request(app)
             .get('/su')
@@ -185,23 +204,23 @@ describe('GET /su', () => {
     });
 
     test('computes group_remaining as groupCap minus usedSu', async () => {
-        userProfileDB.getUserProfile.mockResolvedValue({ matric_year: 2026 }); // Y1 → y1y2 cap=20
-        suPolicy.getSuPolicy.mockResolvedValue({ total_su: 32, y1y2_cap: 20, y3y4_cap: 12 });
-        userSuInfoDB.getSuInfo.mockResolvedValue({ used_su: 8, total_su: 32 });
-        timetableDB.getTimetableByUserID.mockResolvedValue({ data: [] });
-        moduleDB.getSuAbleModulesByCodes.mockResolvedValue({ data: [] });
+        mockGetUserProfile.mockResolvedValue({ matric_year: 2026 } as any);
+        mockGetSuPolicy.mockResolvedValue({ total_su: 32, y1y2_cap: 20, y3y4_cap: 12 } as any);
+        mockGetSuInfo.mockResolvedValue({ used_su: 8, total_su: 32 } as any);
+        mockGetTimetableByUserID.mockResolvedValue({ data: [] } as any);
+        mockGetSuAbleModulesByCodes.mockResolvedValue({ data: [] } as any);
 
         const res = await request(app)
             .get('/su')
             .set('Authorization', AUTH_HEADER);
 
-        expect(res.body.group_remaining).toBe(12); // 20 - 8
+        expect(res.body.group_remaining).toBe(12);
     });
 
     // ── Error paths ──────────────────────────────────────────────────────────
 
     test('returns 500 if getUserProfile throws', async () => {
-        userProfileDB.getUserProfile.mockRejectedValue(new Error('DB connection failed'));
+        mockGetUserProfile.mockRejectedValue(new Error('DB connection failed') as any);
 
         const res = await request(app)
             .get('/su')
@@ -212,8 +231,8 @@ describe('GET /su', () => {
     });
 
     test('returns 500 if getSuPolicy throws', async () => {
-        userProfileDB.getUserProfile.mockResolvedValue({ matric_year: 2024 });
-        suPolicy.getSuPolicy.mockRejectedValue(new Error('Policy not found'));
+        mockGetUserProfile.mockResolvedValue({ matric_year: 2024 } as any);
+        mockGetSuPolicy.mockRejectedValue(new Error('Policy not found') as any);
 
         const res = await request(app)
             .get('/su')
@@ -223,10 +242,10 @@ describe('GET /su', () => {
     });
 
     test('returns 500 if timetable fetch fails', async () => {
-        userProfileDB.getUserProfile.mockResolvedValue({ matric_year: 2024 });
-        suPolicy.getSuPolicy.mockResolvedValue({ total_su: 32, y1y2_cap: 20, y3y4_cap: 12 });
-        userSuInfoDB.getSuInfo.mockResolvedValue({ used_su: 0, total_su: 32 });
-        timetableDB.getTimetableByUserID.mockRejectedValue(new Error('Timetable error'));
+        mockGetUserProfile.mockResolvedValue({ matric_year: 2024 } as any);
+        mockGetSuPolicy.mockResolvedValue({ total_su: 32, y1y2_cap: 20, y3y4_cap: 12 } as any);
+        mockGetSuInfo.mockResolvedValue({ used_su: 0, total_su: 32 } as any);
+        mockGetTimetableByUserID.mockRejectedValue(new Error('Timetable error') as any);
 
         const res = await request(app)
             .get('/su')
@@ -241,19 +260,20 @@ describe('GET /su', () => {
 describe('POST /su/userProfile', () => {
 
     beforeEach(() => {
+        jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] }).setSystemTime(new Date('2026-05-15'));
         jest.clearAllMocks();
-        supabase.auth.getUser.mockResolvedValue({
+        mockGetUser.mockResolvedValue({
             data: { user: { id: MOCK_USER_ID } }
-        });
+        } as any);
     });
 
-    test('returns 500 when Authorization header is missing', async () => {
+    test('returns 401 when Authorization header is missing', async () => {
         const res = await request(app).post('/su/userProfile').send({ matricYear: 2024 });
-        expect(res.status).toBe(500);
+        expect(res.status).toBe(401);
     });
 
     test('returns 401 when token is present but getUser fails', async () => {
-        supabase.auth.getUser.mockRejectedValue(new Error('Invalid token'));
+        mockGetUser.mockRejectedValue(new Error('Invalid token') as any);
 
         const res = await request(app)
             .post('/su/userProfile')
@@ -274,9 +294,9 @@ describe('POST /su/userProfile', () => {
     });
 
     test('returns 200 and success message on valid upsert', async () => {
-        userProfileDB.upsertUserProfile.mockResolvedValue([{
+        mockUpsertUserProfile.mockResolvedValue([{
             user_id: MOCK_USER_ID, matric_year: 2024
-        }]);
+        }] as any);
 
         const res = await request(app)
             .post('/su/userProfile')
@@ -289,18 +309,18 @@ describe('POST /su/userProfile', () => {
     });
 
     test('calls upsertUserProfile with correct userId and matricYear', async () => {
-        userProfileDB.upsertUserProfile.mockResolvedValue([{ user_id: MOCK_USER_ID, matric_year: 2024 }]);
+        mockUpsertUserProfile.mockResolvedValue([{ user_id: MOCK_USER_ID, matric_year: 2024 }] as any);
 
         await request(app)
             .post('/su/userProfile')
             .set('Authorization', AUTH_HEADER)
             .send({ matricYear: 2024 });
 
-        expect(userProfileDB.upsertUserProfile).toHaveBeenCalledWith(MOCK_USER_ID, 2024);
+        expect(mockUpsertUserProfile).toHaveBeenCalledWith(MOCK_USER_ID, 2024);
     });
 
     test('returns 500 if upsertUserProfile throws', async () => {
-        userProfileDB.upsertUserProfile.mockRejectedValue(new Error('DB error'));
+        mockUpsertUserProfile.mockRejectedValue(new Error('DB error') as any);
 
         const res = await request(app)
             .post('/su/userProfile')
@@ -317,15 +337,16 @@ describe('POST /su/userProfile', () => {
 describe('POST /su/info', () => {
 
     beforeEach(() => {
+        jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] }).setSystemTime(new Date('2026-05-15'));
         jest.clearAllMocks();
-        supabase.auth.getUser.mockResolvedValue({
+        mockGetUser.mockResolvedValue({
             data: { user: { id: MOCK_USER_ID } }
-        });
+        } as any);
     });
 
-    test('returns 500 when Authorization header is missing', async () => {
+    test('returns 401 when Authorization header is missing', async () => {
         const res = await request(app).post('/su/info').send({ totalSu: 32, usedSU: 4 });
-        expect(res.status).toBe(500);
+        expect(res.status).toBe(401);
     });
 
     test('returns 400 when totalSu is missing', async () => {
@@ -358,9 +379,9 @@ describe('POST /su/info', () => {
     });
 
     test('returns 200 and success message on valid upsert', async () => {
-        userSuInfoDB.upsertSuInfo.mockResolvedValue([{
+        mockUpsertSuInfo.mockResolvedValue([{
             user_id: MOCK_USER_ID, total_su: 32, used_su: 4
-        }]);
+        }] as any);
 
         const res = await request(app)
             .post('/su/info')
@@ -373,18 +394,18 @@ describe('POST /su/info', () => {
     });
 
     test('calls upsertSuInfo with correct arguments', async () => {
-        userSuInfoDB.upsertSuInfo.mockResolvedValue([{ user_id: MOCK_USER_ID }]);
+        mockUpsertSuInfo.mockResolvedValue([{ user_id: MOCK_USER_ID }] as any);
 
         await request(app)
             .post('/su/info')
             .set('Authorization', AUTH_HEADER)
             .send({ totalSu: 32, usedSU: 4 });
 
-        expect(userSuInfoDB.upsertSuInfo).toHaveBeenCalledWith(MOCK_USER_ID, 32, 4);
+        expect(mockUpsertSuInfo).toHaveBeenCalledWith(MOCK_USER_ID, 32, 4);
     });
 
     test('returns 500 if upsertSuInfo throws', async () => {
-        userSuInfoDB.upsertSuInfo.mockRejectedValue(new Error('DB error'));
+        mockUpsertSuInfo.mockRejectedValue(new Error('DB error') as any);
 
         const res = await request(app)
             .post('/su/info')
@@ -396,14 +417,13 @@ describe('POST /su/info', () => {
     });
 
     test('accepts usedSU of 0 (valid — not undefined)', async () => {
-        userSuInfoDB.upsertSuInfo.mockResolvedValue([{ user_id: MOCK_USER_ID, total_su: 32, used_su: 0 }]);
+        mockUpsertSuInfo.mockResolvedValue([{ user_id: MOCK_USER_ID, total_su: 32, used_su: 0 }] as any);
 
         const res = await request(app)
             .post('/su/info')
             .set('Authorization', AUTH_HEADER)
             .send({ totalSu: 32, usedSU: 0 });
 
-        // 0 is a valid value (falsy but !== undefined), so should pass
         expect(res.status).toBe(200);
     });
 });
@@ -413,24 +433,24 @@ describe('POST /su/info', () => {
 describe('POST /su/eligible', () => {
 
     beforeEach(() => {
+        jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] }).setSystemTime(new Date('2026-05-15'));
         jest.clearAllMocks();
-        supabase.auth.getUser.mockResolvedValue({
+        mockGetUser.mockResolvedValue({
             data: { user: { id: MOCK_USER_ID } }
-        });
+        } as any);
     });
 
-    test('returns 500 when Authorization header is missing', async () => {
+    test('returns 401 when Authorization header is missing', async () => {
         const res = await request(app)
             .post('/su/eligible')
             .send([{ moduleCode: 'CS1101S' }]);
-        expect(res.status).toBe(500);
+        expect(res.status).toBe(401);
     });
 
     test('returns SU-able modules filtered from input list', async () => {
-        moduleDB.getSuAbleModulesByCodes.mockResolvedValue({
+        mockGetSuAbleModulesByCodes.mockResolvedValue({
             data: [{ module_code: 'CS1101S', is_su_eligible: true }]
-            // CS2109S not returned — not SU-able
-        });
+        } as any);
 
         const res = await request(app)
             .post('/su/eligible')
@@ -443,7 +463,7 @@ describe('POST /su/eligible', () => {
     });
 
     test('returns empty suAbleModules when no modules are SU-able', async () => {
-        moduleDB.getSuAbleModulesByCodes.mockResolvedValue({ data: [] });
+        mockGetSuAbleModulesByCodes.mockResolvedValue({ data: [] } as any);
 
         const res = await request(app)
             .post('/su/eligible')
@@ -455,7 +475,7 @@ describe('POST /su/eligible', () => {
     });
 
     test('returns empty suAbleModules when input list is empty', async () => {
-        moduleDB.getSuAbleModulesByCodes.mockResolvedValue({ data: [] });
+        mockGetSuAbleModulesByCodes.mockResolvedValue({ data: [] } as any);
 
         const res = await request(app)
             .post('/su/eligible')
@@ -467,13 +487,13 @@ describe('POST /su/eligible', () => {
     });
 
     test('calls getSuAbleModulesByCodes with extracted module codes', async () => {
-        moduleDB.getSuAbleModulesByCodes.mockResolvedValue({ data: [] });
+        mockGetSuAbleModulesByCodes.mockResolvedValue({ data: [] } as any);
 
         await request(app)
             .post('/su/eligible')
             .set('Authorization', AUTH_HEADER)
             .send([{ moduleCode: 'CS1101S' }, { moduleCode: 'MA1521' }]);
 
-        expect(moduleDB.getSuAbleModulesByCodes).toHaveBeenCalledWith(['CS1101S', 'MA1521']);
+        expect(mockGetSuAbleModulesByCodes).toHaveBeenCalledWith(['CS1101S', 'MA1521']);
     });
 });
