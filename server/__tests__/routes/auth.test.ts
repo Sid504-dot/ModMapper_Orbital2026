@@ -1,5 +1,6 @@
-const request = require('supertest');
-const express = require('express');
+import request from 'supertest';
+import express from 'express';
+import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 
 // Mock supabase BEFORE requiring the router
 jest.mock('../../db/supabase', () => ({
@@ -21,7 +22,7 @@ app.use('/auth', authRouter);
 // ─── POST /auth/register ────────────────────────────────────────────────────
 
 describe('POST /auth/register', () => {
-    beforeEach(() => jest.clearAllMocks());
+    beforeEach(async () => jest.clearAllMocks());
 
     test('returns 400 if email is missing', async () => {
         const res = await request(app)
@@ -99,7 +100,7 @@ describe('POST /auth/register', () => {
 // ─── POST /auth/login ───────────────────────────────────────────────────────
 
 describe('POST /auth/login', () => {
-    beforeEach(() => jest.clearAllMocks());
+    beforeEach(async () => jest.clearAllMocks());
 
     test('returns 400 if email is missing', async () => {
         const res = await request(app)
@@ -176,7 +177,7 @@ describe('POST /auth/login', () => {
 // ─── POST /auth/forgot-password ─────────────────────────────────────────────
 
 describe('POST /auth/forgot-password', () => {
-    beforeEach(() => jest.clearAllMocks());
+    beforeEach(async () => jest.clearAllMocks());
 
     test('returns 400 if email is missing', async () => {
         const res = await request(app)

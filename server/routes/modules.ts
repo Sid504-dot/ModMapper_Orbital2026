@@ -1,11 +1,20 @@
-const express = require('express');
+import express, { Request, Response } from 'express';
 const router = express.Router();
-const modulesDB = require('../db/modules');
-const nusmodsService = require('../services/nusmods');
+import * as modulesDB from '../db/modules';
+import * as nusmodsService from '../services/nusmods';
+import { requireAuth } from '../middleware/requireAuth';
+router.use(requireAuth);
 
-router.get('/', async (req, res) => {
+
+router.get('/', async (req: Request, res: Response) => {
     
-    const b = req.query.module_code;
+    const moduleCode = req.query.module_code;
+
+    if (typeof moduleCode !== 'string' || moduleCode.trim() === '') {
+        return res.status(400).json({ error: 'module_code query parameter is required' });
+    }
+
+    const b = moduleCode;
     const { data } = await modulesDB.getModuleByCode(b);
     
     if (!data || data.length === 0) {
@@ -28,10 +37,11 @@ router.get('/', async (req, res) => {
             return res.json(newData);
         }
         catch (error) {
-            return res.status(500).json({ error: 'Failed to fetch module data from NUSMods' }, error);
+            console.error('Failed to fetch module data from NUSMods:', error);
+            return res.status(500).json({ error: 'Failed to fetch module data from NUSMods' });
         }
     }        
     return res.json(data);
 });
 
-module.exports = router;
+export default router;

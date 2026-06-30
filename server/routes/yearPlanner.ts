@@ -1,46 +1,26 @@
-const express = require('express');
+import express, { Request, Response } from 'express';
 const router = express.Router();
-const supabase = require('../db/supabase');
-const yearPlannerDB = require('../db/yearPlanner');
+import supabase from '../db/supabase';
+import * as yearPlannerDB from '../db/yearPlanner';
+import { requireAuth } from '../middleware/requireAuth';
+router.use(requireAuth);
 
 
-router.get('/', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const token = authHeader.split(' ')[1];
-
-    const { data, error: authError } = await supabase.auth.getUser(token);
-    const userID = data?.user?.id;
-    if (authError || !userID) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
+router.get('/', async (req: Request, res: Response) => {
 
     try {
         const allProgrammes = await yearPlannerDB.getAllProgrammes();
         return res.json(allProgrammes);
     } catch (err) {
-        return res.status(500).json({ error: err.message });
+        const message = err instanceof Error ? err.message : String(err);
+        return res.status(500).json({ error: message });
     }
 
 });
 
-router.post('/select-programmes', async (req, res) => {
+router.post('/select-programmes', async (req: Request, res: Response) => {
     
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const token = authHeader.split(' ')[1];
-
-    const { data, error: authError } = await supabase.auth.getUser(token);
-    const userID = data?.user?.id;
-    if (authError || !userID) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
+    const userID = req.user.id;
 
     const { programmeIDs } = req.body; //send in an array
 
@@ -52,25 +32,15 @@ router.post('/select-programmes', async (req, res) => {
         await yearPlannerDB.upsertProgrammes(userID, programmeIDs);
         return res.json('Success');
     } catch (err) {
-        return res.status(500).json({ error: err.message });
+        const message = err instanceof Error ? err.message : String(err);
+        return res.status(500).json({ error: message });
     }
 
 });
 
-router.delete('/delete-user-programme', async (req, res) => {
+router.delete('/delete-user-programme', async (req: Request, res: Response) => {
     
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const token = authHeader.split(' ')[1];
-
-    const { data, error: authError } = await supabase.auth.getUser(token);
-    const userID = data?.user?.id;
-    if (authError || !userID) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
+    const userID = req.user.id;
 
     const { programmeID } = req.body; //send int
 
@@ -82,9 +52,10 @@ router.delete('/delete-user-programme', async (req, res) => {
         await yearPlannerDB.deleteProgrammes(userID, programmeID);
         return res.json('Success');
     } catch (err) {
-        return res.status(500).json({ error: err.message });
+        const message = err instanceof Error ? err.message : String(err);
+        return res.status(500).json({ error: message });
     }
     
 });
 
-module.exports = router;
+export default router;

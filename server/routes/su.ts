@@ -1,31 +1,17 @@
-const express = require('express');
+import express, { Request, Response } from 'express';
 const router = express.Router();
-const supabase = require('../db/supabase');
-const suPolicy = require('../db/suPolicy');
-const timetableDB = require('../db/timetable');
-const userSuInfoDB = require('../db/userSuInfo');
-const moduleDB = require('../db/modules');
-const userSemDB = require('../db/userSem');
-const userProfileDB = require('../db/userProfile');
+import * as suPolicy from '../db/suPolicy';
+import * as timetableDB from '../db/timetable';
+import * as userSuInfoDB from '../db/userSuInfo';
+import * as moduleDB from '../db/modules';
+import * as userSemDB from '../db/userSem';
+import * as userProfileDB from'../db/userProfile';
+import { requireAuth } from '../middleware/requireAuth';
+router.use(requireAuth);
 
-router.get('/', async (req, res) => {
-    const token = req.headers.authorization?.split(' ')[1];
-
-    if (!token) {
-        return res.status(401).json({ error: 'Unauthorized 1' });
-    }
-
+router.get('/', async (req: Request, res: Response) => {
+    const userID = req.user.id;
     try {
-        const { data: { user } } = await supabase.auth.getUser(token);
-
-        const userID = user?.id;
-
-        if (!userID) {
-            return res.status(401).json({ error: 'Unauthorized 2' });
-        }
-
-        req.user = userID;
-
         const sem = await userSemDB.getUserSemByUserID(userID);
 
         if (sem == null) {
@@ -50,13 +36,13 @@ router.get('/', async (req, res) => {
         // FIX: getTimetableByUserID returns the data directly
         const timetableData = await timetableDB.getTimetableByUserID(userID);
 
-        const moduleCodes = timetableData.map(entry => entry.module_code);
+        const moduleCodes = timetableData.map((entry: any) => entry.module_code);
 
         const suAbleModules =
             await moduleDB.getSuAbleModulesByCodes(moduleCodes);
 
-        const modules = timetableData.map(entry => {
-            const mod = suAbleModules.data.find(
+        const modules = timetableData.map((entry: any) => {
+            const mod = (suAbleModules.data ?? []).find(
                 m => m.module_code === entry.module_code
             );
 
@@ -77,28 +63,17 @@ router.get('/', async (req, res) => {
             totalSu,
             modules
         });
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Error fetching SU data:', error);
-        res.status(500).json({ error: error.message });
+        const message = error instanceof Error ? error.message : String(error);
+        res.status(500).json({ error: message });
     }
 });
 
 router.post('/userProfile', async (req,res) => {
-    const token = req.headers.authorization.split(" ")[1];
-
-    if(!token) {
-        return res.status(401).json({error: 'Unauthorized 1'});
-    }
+    const userID = req.user.id;
 
     try {
-        const {data: {user}} = await supabase.auth.getUser(token);
-        
-        const userID = user.id;
-        req.user = userID;
-
-        if(!userID) {
-            return res.status(401).json({error: 'Unauthorized 3'});
-        }
 
         const {matricYear} = req.body;
 
@@ -118,21 +93,10 @@ router.post('/userProfile', async (req,res) => {
     }
 });
 
-router.post('/info', async (req, res) => {
-    const token = req.headers.authorization.split(" ")[1];
+router.post('/info', async (req: Request, res: Response) => {
+    const userID = req.user.id;
 
-    if(!token) {
-        return res.status(401).json({error: 'Unauthorized 1'});
-    }
-
-    try{
-        const {data: {user}} = await supabase.auth.getUser(token); 
-        const userID = user.id;
-        req.user = userID;
-
-        if(!userID) {
-            return res.status(401).json({error: 'Unauthorized 3'});
-        }
+    try {
 
         const {totalSu, usedSU} = req.body;
         
@@ -152,23 +116,12 @@ router.post('/info', async (req, res) => {
     }
 });
 
-router.post('/eligible', async (req, res) => {
-    const token = req.headers.authorization.split(" ")[1];
-    
-    if(!token) {
-        return res.status(401).json({error: 'Unauthorized 1'});
-    }
+router.post('/eligible', async (req: Request, res: Response) => {
+    const userID = req.user.id;
 
     try {
-        const {data: {user}} = await supabase.auth.getUser(token); 
-        const userID = user.id;
-        req.user = userID;
-
-        if(!userID) {
-            return res.status(401).json({error: 'Unauthorized 3'});
-        }
-
-        const userReqModules = req.body.map(m => m.moduleCode);
+        
+        const userReqModules = req.body.map((m: any) => m.moduleCode);
         const { data: suAbleModules } = await moduleDB.getSuAbleModulesByCodes(userReqModules);
 
         res.json({suAbleModules});
@@ -180,4 +133,4 @@ router.post('/eligible', async (req, res) => {
 
 
 
-module.exports = router;
+export default router;

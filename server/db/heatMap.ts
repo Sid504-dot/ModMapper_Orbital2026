@@ -1,8 +1,9 @@
-const supabase = require('./supabase');
-const timetableDB = require('./timetable');
-const userSemDB = require('./userSem');
+import supabase from './supabase';
+import { getTimetableBySemNumber } from './timetable';
+import { getUserSemByUserID } from './userSem';
 
-async function needToUpdateSlotDemand(moduleCode) {
+
+export async function needToUpdateSlotDemand(moduleCode: string) {
     const ifModuleExists = await supabase
         .from('slot_demand')
         .select('module_code')
@@ -60,13 +61,13 @@ async function needToUpdateSlotDemand(moduleCode) {
             whichSem = 2;
         }
         
-        const semData = academicYearData.data.semesters.find(s => s.semester === whichSem);
+        const semData = academicYearData.data.semesters.find((s: any) => s.semester === whichSem);
         await updateSlot(moduleCode, semData);
     }
 
 }
 
-async function updateSlot(moduleCode, semData) {
+export async function updateSlot(moduleCode: string, semData: any) {
     const deleteResult = await supabase
         .from('slot_demand')
         .delete()
@@ -85,12 +86,12 @@ async function updateSlot(moduleCode, semData) {
             class_no: slot.classNo,
             lesson_type: slot.lessonType
         }, {
-            onConflict: ['module_code', 'lesson_type', 'class_no']
+            onConflict: 'module_code,lesson_type,class_no'
         });
     }
 }
 
-async function getSlotDemand(slot) {
+export async function getSlotDemand(slot: { module_code: string; lesson_type: string; class_no: string }) {
     const userIDs = await supabase
         .from('user_profile')
         .select('user_id')
@@ -102,14 +103,13 @@ async function getSlotDemand(slot) {
     let count = 0;
 
     for (const ID of userIDs.data) {
-        const currentSem = await userSemDB.getUserSemByUserID(ID.user_id);
-        const timetableData = await timetableDB.getTimetableBySemNumber(currentSem, ID.user_id);
-
-        if (timetableData.error) {
-            throw new Error(`Error fetching timetable: ${timetableData.error.message}`, { cause: timetableData.error });
+        const currentSem = await getUserSemByUserID(ID.user_id);
+        if (currentSem === null) {
+            continue;
         }
+        const timetableData = await getTimetableBySemNumber(currentSem, ID.user_id);
 
-        for (const lesson of timetableData.data[0]?.timetable_data ?? []) {
+        for (const lesson of timetableData[0]?.timetable_data ?? []) {
             if (lesson.moduleCode === slot.module_code &&
                 lesson.lessonType === slot.lesson_type &&
                 lesson.classNo === slot.class_no) {
@@ -121,7 +121,7 @@ async function getSlotDemand(slot) {
     return count;
 }
 
-async function updateHeatMap(moduleCode) {
+export async function updateHeatMap(moduleCode: string) {
     const slotDemandData = await supabase
         .from('slot_demand')
         .select('*')
@@ -141,9 +141,3 @@ async function updateHeatMap(moduleCode) {
     }
 }
 
-module.exports = {
-    needToUpdateSlotDemand,
-    updateSlot,
-    updateHeatMap,
-    getSlotDemand
-};

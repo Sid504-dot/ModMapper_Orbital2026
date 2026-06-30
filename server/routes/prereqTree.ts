@@ -1,26 +1,15 @@
-const express = require('express');
+import express, { Request, Response } from 'express';
 const router = express.Router();
-const supabase = require('../db/supabase');
-const prereqTreeDB = require('../db/prereqTree');
-const qnaEligibilityDB = require('../db/qnaEligibilty');
+import supabase from '../db/supabase';
+import * as prereqTreeDB from '../db/prereqTree';
+import * as qnaEligibilityDB from '../db/qnaEligibilty';
+import { requireAuth } from '../middleware/requireAuth';
+router.use(requireAuth);
 
 
-router.get('/prereq-tree', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(' ')[1];
+router.get('/prereq-tree', async (req: Request, res: Response) => {
+    const userID = req.user.id;
     
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const userID = user.id;
-    
-
-    req.user = userID;
     try {
         const ans = await prereqTreeDB.UserPrereqTree(userID);
         return res.json(ans);
@@ -32,22 +21,8 @@ router.get('/prereq-tree', async (req, res) => {
 });
 
 
-router.post('/refresh-prereq-tree', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(' ')[1];
-    
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const userID = user.id;
-    
-
-    req.user = userID;
+router.post('/refresh-prereq-tree', async (req: Request, res: Response) => {
+    const userID = req.user.id;
 
     try {
         const takenModules = await qnaEligibilityDB.getEligibleModules(userID);
@@ -60,21 +35,8 @@ router.post('/refresh-prereq-tree', async (req, res) => {
 
 });
 
-router.post('/add-module-tree', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(' ')[1];
-    
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const userID = user.id;
-
-    req.user = userID;
+router.post('/add-module-tree', async (req: Request, res: Response) => {
+    const userID = req.user.id;
     const moduleCode = req.body.module_code;
 
     try {
@@ -100,23 +62,8 @@ router.post('/add-module-tree', async (req, res) => {
     }
 });
 
-router.post('/delete-planned-module', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(' ')[1];
-    
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const userID = user.id;
-    
-
-    req.user = userID;
-
+router.post('/delete-planned-module', async (req: Request, res: Response) => {
+    const userID = req.user.id;
     const moduleCode = req.body.module_code;
 
     try {
@@ -134,4 +81,4 @@ router.post('/delete-planned-module', async (req, res) => {
 });
 
 
-module.exports = router;
+export default router;

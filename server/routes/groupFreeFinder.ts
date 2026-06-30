@@ -1,25 +1,11 @@
-const supabase = require('../db/supabase');
-const express = require('express');
+import supabase from '../db/supabase';
+import express, { Request, Response } from 'express';
 const router = express.Router();
-const groupFreeFinderDB = require('../db/groupFreeFinder');
+import * as groupFreeFinderDB from '../db/groupFreeFinder';
+import { requireAuth } from '../middleware/requireAuth';
+router.use(requireAuth);
 
-router.get('/group-free-finder/:groupId', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(' ')[1];
-    
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const userID = user.id;
-    
-
-    req.user = userID;
-
+router.get('/group-free-finder/:groupId', async (req: Request<{groupId: string}>, res: Response) => {
     const groupId = req.params.groupId;
 
     try {
@@ -31,4 +17,4 @@ router.get('/group-free-finder/:groupId', async (req, res) => {
 
 });
 
-module.exports = router;
+export default router;

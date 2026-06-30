@@ -1,25 +1,20 @@
-const supabase = require('./supabase');
+import supabase from './supabase';
 
-function getModuleByCode(moduleCode) {
+export function getModuleByCode(moduleCode: string) {
     return supabase.from('modules').select().eq('module_code', moduleCode);
 }
 
-function upsertModule(moduleData) {
+export function upsertModule(moduleData: any) {
     return supabase.from('modules').upsert(moduleData, { onConflict: 'module_code' });
 }
 
-function getAllModules() {
+export function getAllModules() {
     return supabase.from('modules').select();
 }
 
-function getSuAbleModulesByCodes(moduleCodes) {
+export function getSuAbleModulesByCodes(moduleCodes: string[]) {
     return supabase.from('modules').select('module_code, is_su_eligible').in('module_code', moduleCodes);
 }
 
 
-module.exports = {
-    getModuleByCode,
-    upsertModule,
-    getAllModules,
-    getSuAbleModulesByCodes
-};      
+

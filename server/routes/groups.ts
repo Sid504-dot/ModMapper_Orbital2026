@@ -1,55 +1,30 @@
-const supabase = require('../db/supabase');
-const express = require('express');
+import supabase from '../db/supabase';
+import express, { Request, Response } from 'express';
 const router = express.Router();
-const groupsDB = require('../db/groups');
+import * as groupsDB from '../db/groups';
+import { requireAuth } from '../middleware/requireAuth';
+router.use(requireAuth);
 
-router.post('/create', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(' ')[1];
-    
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const userID = user.id;
-    
-
-    req.user = userID;
+router.post('/create', async (req: Request, res: Response) => {
+    const userID = req.user.id;
     const { groupName } = req.body;
 
     try {
         await groupsDB.createGroup(groupName, userID);
         res.json({ success: true });
-    } catch (err) {
+    } catch (err: unknown) {
         console.error('Failed to create group:', err);
-        res.status(500).json({ error: `Failed to create group ${err.message}` });
+        const msg = err instanceof Error ? err.message : String(err);
+        res.status(500).json({ error: `Failed to create group ${msg}` });
     }
 });
 
-router.get('/my-groups', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(' ')[1];
-    
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const userID = user.id;
-    
-
-    req.user = userID;
+router.get('/my-groups', async (req: Request, res: Response) => {
+    const userID = req.user.id;
 
     try {
         const rows = await groupsDB.getGroupsForUser(userID);
-        const groups = rows.map(r => ({ group_id: r.group_id, name: r.groups.name, owner_id: r.groups.owner_id }));
+        const groups = rows.map((r: any) => ({ group_id: r.group_id, name: r.groups.name, owner_id: r.groups.owner_id }));
         res.json(groups);
     } catch (err) {
         console.error('Failed to fetch groups:', err);
@@ -57,22 +32,8 @@ router.get('/my-groups', async (req, res) => {
     }
 });
 
-router.post('/confirm-member', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(' ')[1];
-    
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const userID = user.id;
-    
-
-    req.user = userID;
+router.post('/confirm-member', async (req: Request, res: Response) => {
+    const userID = req.user.id;
     const { groupId, newMemberId} = req.body;
 
     try {
@@ -88,22 +49,8 @@ router.post('/confirm-member', async (req, res) => {
 }
 );
 
-router.post('/get-out-of-group', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(' ')[1];
-
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const userID = user.id;
-    
-
-    req.user = userID;
+router.post('/get-out-of-group', async (req: Request, res: Response) => {
+    const userID = req.user.id;
     const { groupId } = req.body;
 
     try {
@@ -118,22 +65,8 @@ router.post('/get-out-of-group', async (req, res) => {
     }
 });
 
-router.post('/join-group', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(' ')[1];
-    
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const userID = user.id;
-    
-
-    req.user = userID;
+router.post('/join-group', async (req: Request, res: Response) => {
+    const userID = req.user.id;
     const { inviteToken } = req.body;
 
     try {
@@ -150,22 +83,8 @@ router.post('/join-group', async (req, res) => {
     }
 });
 
-router.get('/send-invite/:groupId', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(' ')[1];
-    
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const userID = user.id;
-    
-
-    req.user = userID;
+router.get('/send-invite/:groupId', async (req: Request<{ groupId: string }>, res: Response) => {
+    const userID = req.user.id;
     const groupId = req.params.groupId;
 
     try {
@@ -180,24 +99,8 @@ router.get('/send-invite/:groupId', async (req, res) => {
     }
 });
 
-router.get('/groups/:groupId/members', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const token = authHeader.split(' ')[1];
-
-    const {
-        data: { user },
-        error: authError
-    } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const userID = user.id;
+router.get('/groups/:groupId/members', async (req: Request<{ groupId: string }>, res: Response) => {
+    const userID = req.user.id;
     const groupId = req.params.groupId;
 
     try {
@@ -214,4 +117,4 @@ router.get('/groups/:groupId/members', async (req, res) => {
 });
 
 
-module.exports = router;    
+export default router;

@@ -1,8 +1,8 @@
-const nusmods = require('./nusmods');
-const modulesDB = require('../db/modules');
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+import * as nusmods from './nusmods';
+import * as modulesDB from '../db/modules';
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function processEachModule(module, existingMap) {
+async function processEachModule(module: any, existingMap: Map<string, any>) {
     const existingModule = existingMap.get(module.moduleCode);
     const moduleCode = module.moduleCode;
     const title = module.title;
@@ -57,14 +57,14 @@ async function processEachModule(module, existingMap) {
     }
 }
 
-async function refreshModules() {
+export async function refreshModules() {
     try {
         const allModules = await nusmods.getAllModules();
         const existingModules = await modulesDB.getAllModules();
         
-        const existingMap = new Map(existingModules.data.map(module => [module.module_code, module]));
+        const existingMap = new Map((existingModules.data ?? []).map((module: any) => [module.module_code, module]));
         let count = 0;
-        let moduleArray = [];
+        let moduleArray: any[] = [];
         for (const module of allModules) {
             if (count === 10) {
                 await Promise.all(moduleArray.map((m) => processEachModule(m, existingMap)
@@ -85,9 +85,6 @@ async function refreshModules() {
     console.log('Module refresh complete');
 }
 
-module.exports = {
-    refreshModules
-};
         
 
 

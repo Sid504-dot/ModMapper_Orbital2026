@@ -1,5 +1,6 @@
 const request = require('supertest');
 const express = require('express');
+import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 
 // Mock ALL external dependencies before requiring the router.
 // supabase is used directly in su.js for auth.getUser — mock it here.
@@ -96,8 +97,8 @@ describe('GET /su', () => {
             .get('/su')
             .set('Authorization', AUTH_HEADER);
 
-        const cs = res.body.modules.find(m => m.module_code === 'CS1101S');
-        const laj = res.body.modules.find(m => m.module_code === 'LAJ1201');
+        const cs = res.body.modules.find((m: any) => m.module_code === 'CS1101S');
+        const laj = res.body.modules.find((m: any) => m.module_code === 'LAJ1201');
         expect(cs.is_su_eligible).toBe(true);
         expect(laj.is_su_eligible).toBeNull();
     });

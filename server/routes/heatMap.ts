@@ -1,8 +1,10 @@
-const express = require('express');
+import express, { Request, Response, Router } from 'express';
 const router = express.Router();
-const supabase = require('../db/supabase');
+import supabase from '../db/supabase';
+import { requireAuth } from '../middleware/requireAuth';
+router.use(requireAuth);
 
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
     const moduleCode = req.query.moduleCode;
 
     if (!moduleCode) {
@@ -23,4 +25,4 @@ router.get('/', async (req, res) => {
      }
 });
 
-module.exports = router;
+export default Router

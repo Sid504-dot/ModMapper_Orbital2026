@@ -1,8 +1,8 @@
-const express = require('express');
+import express, { Request, Response } from 'express';
 const router = express.Router();
 const supabase = require('../db/supabase');
 
-router.post('/register', async (req, res) => {
+router.post('/register', async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -18,7 +18,7 @@ router.post('/register', async (req, res) => {
   res.status(201).json({ message: 'User registered successfully', data });
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -34,7 +34,7 @@ router.post('/login', async (req, res) => {
   res.json({ message: 'Login successful', token: data.session.access_token });
 });
 
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', async (req: Request, res: Response) => {
   const { email } = req.body;
 
   if (!email) {
@@ -50,4 +50,4 @@ router.post('/forgot-password', async (req, res) => {
   res.json({ message: 'If this email is registered, a reset link has been sent.' });
 });
 
-module.exports = router;
+export default router;

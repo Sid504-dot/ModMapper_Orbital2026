@@ -1,9 +1,9 @@
 import express, { Request, Response } from 'express';
 import supabase from '../db/supabase';
-import qnaEligibilityDB from '../db/qnaEligibilty';
-import authRequire from '../middleware/requireAuth';
-
+import * as qnaEligibilityDB from '../db/qnaEligibilty';
+import { requireAuth } from '../middleware/requireAuth';
 const router = express.Router();
+router.use(requireAuth);
 
 
 router.get('/', async (req: Request, res: Response) => {
@@ -20,9 +20,8 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 
-router.get('/:moduleCode/posts', async (req: Request, res: Response) => {
+router.get('/:moduleCode/posts', async (req: Request<{ moduleCode: string }>, res: Response) => {
     
-    const userID = req.user.id;
     const moduleCode = req.params.moduleCode;
     
     try {
@@ -49,7 +48,7 @@ router.get('/:moduleCode/posts', async (req: Request, res: Response) => {
     
 });
 
-router.post('/:moduleCode/posts', async (req: Request, res: Response) => {
+router.post('/:moduleCode/posts', async (req: Request<{ moduleCode: string }>, res: Response) => {
     
     const userID = req.user.id;
     const moduleCode = req.params.moduleCode;
@@ -158,9 +157,8 @@ router.delete('/posts/:postId', async (req: Request, res: Response) => {
 });
 
 
-router.post('/posts/:id/upvote', async (req: Request, res: Response) => {
+router.post('/posts/:id/upvote', async (req: Request<{ id: string }>, res: Response) => {
     
-    const userID = req.user.id;
     const postId = req.params.id;
     const { id : user_id } = req.user;
 

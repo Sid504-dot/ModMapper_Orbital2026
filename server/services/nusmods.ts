@@ -1,4 +1,4 @@
-async function moduleGetData (moduleCode) {
+export async function moduleGetData (moduleCode: string) {
 
     const year = new Date().getFullYear();
     try {
@@ -19,7 +19,7 @@ async function moduleGetData (moduleCode) {
     }
 }
 
-async function getAllModules() {
+export async function getAllModules() {
     const year = new Date().getFullYear();
     try {
         const url_next_year = `https://api.nusmods.com/v2/${year}-${year+1}/moduleList.json`;
@@ -42,7 +42,3 @@ async function getAllModules() {
 
 
 
-module.exports = {
-    moduleGetData,
-    getAllModules
-};

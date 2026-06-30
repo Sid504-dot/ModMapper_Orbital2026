@@ -1,6 +1,6 @@
-const heatMapDB = require('../db/heatMap');
-const cron = require('node-cron');
-const supabase = require('../db/supabase');
+import * as heatMapDB from '../db/heatMap';
+import cron from 'node-cron';
+import supabase from'../db/supabase';
 
 cron.schedule('0 2 * * *', async () => {
     const date = new Date().getDate();
@@ -58,7 +58,7 @@ cron.schedule('0 14 * * *', async () => {
     }
 
     if (flag) {
-        for (const row of modules.data) {
+        for (const row of modules.data ?? []) {
             await heatMapDB.needToUpdateSlotDemand(row.module_code);
             await heatMapDB.updateHeatMap(row.module_code);
         }

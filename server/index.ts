@@ -1,20 +1,21 @@
-const cors = require('cors')
-const express = require('express');
+import cors from 'cors';
+import express, { Request, Response } from 'express';
+import supabase from './db/supabase';
+import authRouter from './routes/auth';
+import modulesRouter from './routes/modules';
+import './services/cron';
+import './services/heatMapUpdate';
+import timetableRouter from './routes/timetable';
+import suRouter from './routes/su';
+import heatMapGetRouter from './routes/heatMap';
+import groupsRouter from './routes/groups';
+import groupFreeFinderRouter from './routes/groupFreeFinder';
+import prereqTreeRouter from './routes/prereqTree';
+import ueReccomenderRouter from './routes/ueRecommender';
+import qnaHubRouter from './routes/qnaHub';
+
 const app = express();
 const PORT = process.env.PORT || 3000;
-const supabase = require('./db/supabase');
-const authRouter = require('./routes/auth');
-const modulesRouter = require('./routes/modules');
-require('./services/cron');
-require('./services/heatMapUpdate');
-const timetableRouter = require('./routes/timetable');
-const suRouter = require('./routes/su');
-const heatMapGetRouter = require('./routes/heatMap');
-const groupsRouter = require('./routes/groups');
-const groupFreeFinderRouter = require('./routes/groupFreeFinder');
-const prereqTreeRouter = require('./routes/prereqTree');
-const ueReccomenderRouter = require('./routes/ueRecommender');
-const qnaHubRouter = require('./routes/qnaHub');
 
 app.use(express.json());
 app.use(cors({ origin: '*' }))
@@ -29,11 +30,11 @@ app.use('/prereqTree', prereqTreeRouter);
 app.use('/ueReccomender', ueReccomenderRouter);
 app.use('/qnahub',qnaHubRouter)
 
-app.get('/health', (req, res) => {
+app.get('/health', (res: Response) => {
   res.json({ status: 'ok' });
 });
 
-app.get('/test-supabase', async (req, res) => {
+app.get('/test-supabase', async (res: Response) => {
   const { data, error } = await supabase.auth.getSession();
   if (error) {
     return res.status(500).json({ error: error.message });

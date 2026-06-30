@@ -1,14 +1,18 @@
-const request = require('supertest');
-const express = require('express');
+import request from 'supertest';
+import express from 'express';
+import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 
 jest.mock('../../db/supabase', () => ({
     auth: { getUser: jest.fn() }
 }));
 jest.mock('../../db/timetable');
 
-const supabase     = require('../../db/supabase');
-const timetableDB  = require('../../db/timetable');
-const timetableRouter = require('../../routes/timetable');
+import supabase from '../../db/supabase';
+import * as timetableDBImport from '../../db/timetable';
+const timetableDB = timetableDBImport as jest.Mocked<typeof timetableDBImport>;
+import timetableRouter from '../../routes/timetable';
+
+const mockGetUser = supabase.auth.getUser as unknown as jest.MockedFunction<() => Promise<{ data: { user: { id: string } } }>>;
 
 const app = express();
 app.use(express.json());
@@ -24,7 +28,7 @@ describe('GET /timetable', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        supabase.auth.getUser.mockResolvedValue({
+        mockGetUser.mockResolvedValue({
             data: { user: { id: MOCK_USER_ID } }
         });
     });
@@ -36,13 +40,13 @@ describe('GET /timetable', () => {
     });
 
     test('returns timetable entries for authenticated user', async () => {
-        timetableDB.getTimetableByUserID.mockResolvedValue({
+        timetableDB.getTimetableByUserID.mockResolvedValue(({
             data: [
                 { module_code: 'CS1101S', user_id: MOCK_USER_ID },
                 { module_code: 'MA1521',  user_id: MOCK_USER_ID }
             ],
             error: null
-        });
+        } as unknown) as any);
 
         const res = await request(app)
             .get('/timetable')
@@ -54,7 +58,7 @@ describe('GET /timetable', () => {
     });
 
     test('returns empty array when user has no timetable entries', async () => {
-        timetableDB.getTimetableByUserID.mockResolvedValue({ data: [], error: null });
+        timetableDB.getTimetableByUserID.mockResolvedValue(({ data: [], error: null } as unknown) as any);
 
         const res = await request(app)
             .get('/timetable')
@@ -65,10 +69,10 @@ describe('GET /timetable', () => {
     });
 
     test('returns 500 when DB returns an error', async () => {
-        timetableDB.getTimetableByUserID.mockResolvedValue({
+        timetableDB.getTimetableByUserID.mockResolvedValue(({
             data: null,
             error: { message: 'Failed to query timetable' }
-        });
+        } as unknown) as any);
 
         const res = await request(app)
             .get('/timetable')
@@ -79,7 +83,7 @@ describe('GET /timetable', () => {
     });
 
     test('calls getTimetableByUserID with the authenticated user ID', async () => {
-        timetableDB.getTimetableByUserID.mockResolvedValue({ data: [], error: null });
+        timetableDB.getTimetableByUserID.mockResolvedValue(({ data: [], error: null } as unknown) as any);
 
         await request(app)
             .get('/timetable')
@@ -95,7 +99,7 @@ describe('POST /timetable', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        supabase.auth.getUser.mockResolvedValue({
+        mockGetUser.mockResolvedValue({
             data: { user: { id: MOCK_USER_ID } }
         });
     });
@@ -108,10 +112,10 @@ describe('POST /timetable', () => {
     });
 
     test('upserts and returns timetable entry on success', async () => {
-        timetableDB.upsertTimetableEntry.mockResolvedValue({
+        timetableDB.upsertTimetableEntry.mockResolvedValue(({
             data: [{ module_code: 'CS1101S', user_id: MOCK_USER_ID }],
             error: null
-        });
+        } as unknown) as any);
 
         const res = await request(app)
             .post('/timetable')
@@ -123,10 +127,10 @@ describe('POST /timetable', () => {
     });
 
     test('injects user_id from auth into the entry data', async () => {
-        timetableDB.upsertTimetableEntry.mockResolvedValue({
+        timetableDB.upsertTimetableEntry.mockResolvedValue(({
             data: [{ module_code: 'CS1101S', user_id: MOCK_USER_ID }],
             error: null
-        });
+        } as unknown) as any);
 
         await request(app)
             .post('/timetable')
@@ -140,10 +144,10 @@ describe('POST /timetable', () => {
     });
 
     test('returns 500 when upsert fails', async () => {
-        timetableDB.upsertTimetableEntry.mockResolvedValue({
+        timetableDB.upsertTimetableEntry.mockResolvedValue(({
             data: null,
             error: { message: 'Unique constraint violation' }
-        });
+        } as unknown) as any);
 
         const res = await request(app)
             .post('/timetable')
@@ -155,7 +159,7 @@ describe('POST /timetable', () => {
     });
 
     test('returns 500 if getUser throws (invalid token)', async () => {
-        supabase.auth.getUser.mockRejectedValue(new Error('Invalid JWT'));
+        mockGetUser.mockRejectedValue(new Error('Invalid JWT'));
 
         const res = await request(app)
             .post('/timetable')

@@ -1,24 +1,14 @@
-const express = require('express');
+import express, { Request, Response } from 'express';
 const router = express.Router();
-const supabase = require('../db/supabase');
-const ueReccomenderDB = require('../db/ueRecommender');
-const qnaEligibilityDB = require('../db/qnaEligibilty');
-const embeddingServer = require('../services/embeddings');
+import supabase from '../db/supabase';
+import * as ueReccomenderDB from '../db/ueRecommender';
+import * as qnaEligibilityDB from '../db/qnaEligibilty';
+import * as embeddingServer from'../services/embeddings';
+import { requireAuth } from '../middleware/requireAuth';
+router.use(requireAuth);
 
-router.post('/user-ue-prompt', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const token = authHeader.split(' ')[1];
-
-    const { data: { user } } = await supabase.auth.getUser(token);
-    const userID = user?.id;
-
-    if (!userID) {
-        return res.status(401).json({ error: 'Unauthorized 2' });
-    }
+router.post('/user-ue-prompt', async (req: Request, res: Response) => {
+    const userID = req.user.id;
 
     const userInput = req.body.user_input;
 
@@ -29,7 +19,7 @@ router.post('/user-ue-prompt', async (req, res) => {
     try {
         let takenModules = await qnaEligibilityDB.getEligibleModules(userID);
 
-        takenModules = takenModules.map(m => typeof m === 'string' ? m : m.module_code);
+        takenModules = takenModules.map((m: any) => typeof m === 'string' ? m : m.module_code);
 
         let expandedUserInput = userInput;
 
@@ -68,14 +58,16 @@ router.post('/user-ue-prompt', async (req, res) => {
 
         return res.json(modulesJson);
 
-    } catch (err) {
+    } catch (err: unknown) {
         console.error(err);
 
+        const message = err instanceof Error ? err.message : 'Internal server error';
+
         return res.status(500).json({
-            error: err.message || 'Internal server error'
+            error: message
         });
     }
 });
 
 
-module.exports = router;
+export default router;

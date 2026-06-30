@@ -1,8 +1,8 @@
-const supabase = require('./supabase');
-const userSemDB = require('./userSem');
+import supabase from './supabase';
+import { getUserSemByUserID } from './userSem';
 
-async function getEligibleModules(userID) {
-    const currentSem = await userSemDB.getUserSemByUserID(userID);
+export async function getEligibleModules(userID: string) {
+    const currentSem = await getUserSemByUserID(userID);
 
     const {data , error} = await supabase
         .from('user_timetable')
@@ -14,7 +14,7 @@ async function getEligibleModules(userID) {
         throw new Error(`Error fetching timetable: ${error.message}`);
     }
 
-    const codes = new Set();
+    const codes = new Set<string>();
     for (const row of data) {
         for (const slot of row.timetable_data) {
             codes.add(slot.module_code);
@@ -23,7 +23,7 @@ async function getEligibleModules(userID) {
     return [...codes];
 }
 
-async function getPostsForModule(moduleCode) {
+export async function getPostsForModule(moduleCode: string) {
     const { data, error } = await supabase
         .from('qna_posts')
         .select('*')
@@ -36,7 +36,7 @@ async function getPostsForModule(moduleCode) {
     return data;
 }
 
-async function getNumUpvotes(postId) {
+export async function getNumUpvotes(postId: string) {
     const { count, error } = await supabase
         .from('qna_upvotes')
         .select('post_id', { count: 'exact' , head: true })
@@ -48,8 +48,3 @@ async function getNumUpvotes(postId) {
     return count;
 }
 
-module.exports = {
-    getEligibleModules,
-    getPostsForModule,
-    getNumUpvotes
-};

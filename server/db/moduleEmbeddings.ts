@@ -1,10 +1,10 @@
-const supabase = require('./supabase');
-const { embed } = require('./gemini');
+import supabase from './supabase';
+import { embed } from '../services/embeddings';
 const crypto = require('crypto');
 
-const sha256 = (text) => crypto.createHash('sha256').update(text).digest('hex');
+const sha256 = (text: string) => crypto.createHash('sha256').update(text).digest('hex');
 
-async function syncModuleEmbeddings() {
+export async function syncModuleEmbeddings() {
   const { data: modules, error: modulesError } = await supabase
     .from('modules')
     .select('module_code, module_name, description');
@@ -38,9 +38,8 @@ async function syncModuleEmbeddings() {
       }
       existingMap.set(row.module_code, currentHash);
     } catch (err) {
-      console.error(`Failed to embed ${row.module_code}:`, err.message);
+      console.error(`Failed to embed ${row.module_code}:`, err instanceof Error ? err.message : String(err));
     }
   }
 }
 
-module.exports = { syncModuleEmbeddings };

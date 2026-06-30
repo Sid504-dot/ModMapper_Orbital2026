@@ -1,16 +1,16 @@
-const groupsDB = require('./groups');
-const timetableDB = require('./timetable');
+import { getGroupMembers } from './groups';
+import { getTimetableByUserID } from './timetable';
 
-async function freeTimeFinder(groupId) {
-    const groupMembers = await groupsDB.getGroupMembers(groupId);
+export async function freeTimeFinder(groupId: string) {
+    const groupMembers = await getGroupMembers(groupId);
     const userTimetables = (await Promise.all(groupMembers.filter(y => y.status === 'active')
-        .map(x => timetableDB.getTimetableByUserID(x.user_id))))
+        .map(x => getTimetableByUserID(x.user_id))))
         .filter(Boolean);
 
     const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
 
     const busy = userTimetables.map(x => {
-        const b = { id: x.user_id };
+        const b: Record<string, any> = { id: x.user_id };
         for (const day of days) {
             const slots = [];
             for (const o of x.timetable_data) {
@@ -28,9 +28,9 @@ async function freeTimeFinder(groupId) {
         return b;
     });
 
-    const ans = {};
+    const ans: Record<string, any> = {};
     for (const day of days) {
-        let temp = {};
+        let temp: Record<number, any> = {};
         for (let i = 800; i <= 2100; i += 100) {
             const u = [];
             for (const x of busy) {
@@ -48,6 +48,3 @@ async function freeTimeFinder(groupId) {
 }
 
 
-module.exports = {
-    freeTimeFinder
-}

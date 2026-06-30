@@ -1,6 +1,6 @@
-const supabase = require('./supabase');
+import supabase from './supabase';
 
-async function createGroup(groupName, ownerId) {
+export async function createGroup(groupName: string, ownerId: string) {
     const { data, error } = await supabase
         .from('groups')
         .insert([{ name: groupName, owner_id: ownerId }])
@@ -22,7 +22,7 @@ async function createGroup(groupName, ownerId) {
     return true;
 }
 
-async function getGroupsForUser(userId) {
+export async function getGroupsForUser(userId: string) {
     const { data, error } = await supabase
         .from('group_members')
         .select('group_id, groups(name, owner_id)')
@@ -35,7 +35,7 @@ async function getGroupsForUser(userId) {
     return data;
 }
 
-async function newGroupMember(groupId, userId, status) {
+export async function newGroupMember(groupId: string, userId: string, status: string) {
     const { data, error } = await supabase
         .from('group_members')
         .insert([{ group_id: groupId, user_id: userId, status: status }])
@@ -47,7 +47,7 @@ async function newGroupMember(groupId, userId, status) {
     return true;
 }
 
-async function removeGroupMember(groupId, userId) {
+export async function removeGroupMember(groupId: string, userId: string) {
     const { data, error } = await supabase
         .from('group_members')
         .delete()
@@ -61,7 +61,7 @@ async function removeGroupMember(groupId, userId) {
     return true;
 }
 
-async function updateGroupMemberStatus(groupId, userId, status) {
+export async function updateGroupMemberStatus(groupId: string, userId: string, status: string) {
     const { data, error } = await supabase
         .from('group_members')
         .update({ status: status })
@@ -75,7 +75,7 @@ async function updateGroupMemberStatus(groupId, userId, status) {
     return true;
 }
 
-async function getGroupMembers(groupId) {
+export async function getGroupMembers(groupId: string) {
     const { data, error } = await supabase
         .from('group_members')
         .select('user_id, status')
@@ -88,7 +88,7 @@ async function getGroupMembers(groupId) {
     return data;
 }
 
-async function updateGroupOwner(groupId, leavingUserId) {
+export async function updateGroupOwner(groupId: string, leavingUserId: string) {
     const { data: heir, error: heirError } = await supabase
         .from('group_members')
         .select('user_id')
@@ -121,7 +121,7 @@ async function updateGroupOwner(groupId, leavingUserId) {
     return true;
 }
 
-async function isGroupOwner(groupId, userId) {
+export async function isGroupOwner(groupId: string, userId: string) {
     const { data, error } = await supabase
         .from('groups')
         .select('owner_id')
@@ -135,7 +135,7 @@ async function isGroupOwner(groupId, userId) {
     return data.owner_id === userId;
 }
 
-async function getInviteToken(groupId) {
+export async function getInviteToken(groupId: string) {
     const { data, error } = await supabase
         .from('groups')
         .select('invite_token')
@@ -149,7 +149,7 @@ async function getInviteToken(groupId) {
     return data.invite_token;
 }
 
-async function checkInviteToken(inviteToken) {
+export async function checkInviteToken(inviteToken: string) {
     const { data, error } = await supabase
         .from('groups')
         .select('id')
@@ -167,7 +167,7 @@ async function checkInviteToken(inviteToken) {
     return data.id;
 }
 
-async function isGroupMember(groupId, userId) {
+export async function isGroupMember(groupId: string, userId: string) {
     const { data, error } = await supabase
         .from('group_members')
         .select('user_id')
@@ -180,16 +180,3 @@ async function isGroupMember(groupId, userId) {
     return data !== null;
 }
 
-module.exports = {
-    createGroup,
-    getGroupsForUser,
-    newGroupMember,
-    removeGroupMember,
-    updateGroupMemberStatus,
-    getGroupMembers,
-    updateGroupOwner,
-    isGroupOwner,
-    getInviteToken,
-    checkInviteToken,
-    isGroupMember
-};  

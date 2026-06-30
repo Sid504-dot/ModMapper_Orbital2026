@@ -1,5 +1,7 @@
 const request = require('supertest');
 const express = require('express');
+import { beforeEach, describe, expect, jest, test } from '@jest/globals';
+
 
 // Mock both DB layer and NUSMods service before requiring the router
 jest.mock('../../db/modules');
@@ -16,7 +18,7 @@ app.use('/modules', modulesRouter);
 // ─── GET /modules ────────────────────────────────────────────────────────────
 
 describe('GET /modules', () => {
-    beforeEach(() => jest.clearAllMocks());
+    beforeEach(async () => jest.clearAllMocks());
 
     // ── Cache hit: module exists in DB ───────────────────────────────────────
 

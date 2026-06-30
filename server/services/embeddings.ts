@@ -46,7 +46,11 @@ Each object must contain:
 - eligibility_status
 `;
 
-async function embed(text, taskType) {
+export async function embed(text: string, taskType: string) {
+  if (!GEMINI_KEY) {
+    throw new Error('Missing GEMINI_KEY');
+  }
+
   const res = await fetch(
     `${EMBEDDING_MODEL}:embedContent`,
     {
@@ -82,15 +86,17 @@ async function embed(text, taskType) {
   }
 
   const magnitude = Math.sqrt(
-    embedding.reduce((sum, x) => sum + x * x, 0)
+    embedding.reduce((sum: number, x: number) => sum + x * x, 0)
   );
 
-  return magnitude === 0
-    ? embedding
-    : embedding.map(x => x / magnitude);
+  return magnitude === 0 ? embedding : embedding.map((x: number) => x / magnitude);
 }
 
-async function expandUserText(text, systemPrompt = EXPANSION_PROMPT) {
+export async function expandUserText(text: string, systemPrompt = EXPANSION_PROMPT) {
+  if (!GEMINI_KEY) {
+    throw new Error('Missing GEMINI_KEY');
+  }
+
   const res = await fetch(
     `${GENERATION_MODEL}:generateContent`,
     {
@@ -135,11 +141,11 @@ async function expandUserText(text, systemPrompt = EXPANSION_PROMPT) {
   return expanded;
 }
 
-async function rerankAndRationale(
-  text,
-  modulesJson,
-  rerankPrompt = RERANK_PROMPT
-) {
+export async function rerankAndRationale(text: string, modulesJson: any[], rerankPrompt = RERANK_PROMPT) {
+  if (!GEMINI_KEY) {
+    throw new Error('Missing GEMINI_KEY');
+  }
+  
   const res = await fetch(
     `${GENERATION_MODEL}:generateContent`,
     {
@@ -220,7 +226,7 @@ async function rerankAndRationale(
     );
   }
 
-  let parsed;
+  let parsed: any;
 
   try {
     parsed = JSON.parse(raw);
@@ -234,14 +240,9 @@ async function rerankAndRationale(
     modulesJson.map(m => m.module_code)
   );
 
-  return parsed.filter(item =>
+  return parsed.filter((item: any) =>
     validCodes.has(item.module_code)
   );
 }
 
 
-module.exports = {
-  embed,
-  expandUserText,
-  rerankAndRationale
-}
