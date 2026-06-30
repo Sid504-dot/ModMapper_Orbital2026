@@ -1,8 +1,7 @@
-const supabase = require('./supabase');
-const qnaEligibilityDB = require('./qnaEligibilty');
-const prereqTreeDB = require('./prereqTree');
+import supabase from './supabase';
+import { missingPrereq } from './prereqTree';
 
-async function fetchModules(moduleData, userId) {
+export async function fetchModules(moduleData: { module_code: string }[], userId: string) {
     const moduleArray = moduleData.map(row => row.module_code);
     const { data, error } = await supabase
         .from('modules')
@@ -18,7 +17,7 @@ async function fetchModules(moduleData, userId) {
     return Promise.all(moduleData.map(async row => {
     const module = moduleMap.get(row.module_code);
     if (!module) return null;
-    const missing = await prereqTreeDB.missingPrereq(userId, row.module_code);
+    const missing = await missingPrereq(userId, row.module_code);
     return {
         module_code: module.module_code,
         title: module.module_name,
@@ -28,6 +27,3 @@ async function fetchModules(moduleData, userId) {
     })).then(rows => rows.filter(Boolean));
 }
 
-module.exports = {
-    fetchModules
-}

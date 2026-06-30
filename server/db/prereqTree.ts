@@ -1,6 +1,8 @@
-const supabase = require('./supabase');
+type PrereqLeaf = string | { nOf: [number, string[]] };
+type PrereqTree = { or?: PrereqLeaf[]; and?: { or?: PrereqLeaf[] }[] };
+import supabase from './supabase';
 
-async function checkPrereq(moduleCode, prereqModule) {
+export async function checkPrereq(moduleCode: string, prereqModule: string) {
     const { data, error } = await supabase
         .from('modules')
         .select('prereq_tree')
@@ -15,7 +17,7 @@ async function checkPrereq(moduleCode, prereqModule) {
         return false;
     }
 
-    const tree = data.prereq_tree;
+    const tree = data.prereq_tree as PrereqTree;
 
     if(!tree) {
         return false;
@@ -23,18 +25,14 @@ async function checkPrereq(moduleCode, prereqModule) {
 
     if (tree.or) {
         return tree.or.some(x =>
-            x?.nOf
-                ? n0f(x, prereqModule)
-                : matches(prereqModule, x)
+            typeof x !== 'string' && x.nOf ? n0f(x, prereqModule) : matches(prereqModule, x)
         );
     }
 
     if (tree.and) {
         return tree.and.some(group =>
             group.or?.some(x =>
-                x?.nOf
-                    ? n0f(x, prereqModule)
-                    : matches(prereqModule, x)
+                typeof x !== 'string' && x.nOf ? n0f(x, prereqModule) : matches(prereqModule, x)
             )
         );
     }
@@ -42,14 +40,14 @@ async function checkPrereq(moduleCode, prereqModule) {
     return false;
 }
 
-function n0f(node, moduleCode) {
+function n0f(node: { nOf: [number, string[]] }, moduleCode: string) {
     const [, modules] = node.nOf;
 
     return modules.some(m => matches(moduleCode, m));
 }
 
 
-function matches(prereq, candidate) {
+function matches(prereq: string, candidate: unknown) {
     if (typeof candidate !== 'string') {
         return false;
     }
@@ -63,7 +61,7 @@ function matches(prereq, candidate) {
     return clean === prereq;
 }
 
-async function numPrereq (moduleCode) {
+export async function numPrereq (moduleCode: string) {
     const { data, error } = await supabase
         .from('modules')
         .select('prereq_tree')
@@ -78,7 +76,7 @@ async function numPrereq (moduleCode) {
         return 0;
     }
 
-    const tree = data.prereq_tree;
+    const tree = data.prereq_tree as PrereqTree;
 
     if (!tree) {
         return 0;
@@ -88,7 +86,7 @@ async function numPrereq (moduleCode) {
     }
     else {
         let count = 0;
-        for (const temp of tree.and) {
+        for (const temp of tree.and ?? []) {
             count++;
         }
         return count;
@@ -96,7 +94,7 @@ async function numPrereq (moduleCode) {
     
 }
 
-async function checkPreclusion (moduleCode, precModule) {
+export async function checkPreclusion (moduleCode: string, precModule: string) {
     const { data, error } = await supabase
         .from('modules')
         .select('preclusion')
@@ -110,7 +108,7 @@ async function checkPreclusion (moduleCode, precModule) {
     return data?.preclusion?.includes(precModule) ?? false;
 }
 
-async function fulfillReq (moduleCode) {
+export async function fulfillReq (moduleCode: string) {
     const { data, error } = await supabase
         .from('modules')
         .select('fulfill_requirements')
@@ -124,7 +122,7 @@ async function fulfillReq (moduleCode) {
 }
 
 
-async function UserPrereqTree(userId) {
+export async function UserPrereqTree(userId: string) {
     const { data: takenModules, error } = await supabase
         .from('plan_modules')
         .select('module_code')
@@ -150,17 +148,17 @@ async function UserPrereqTree(userId) {
         throw new Error(`Error fetching prerequisite trees: ${moduleError.message}`);
     }
 
-    const prereqMap = {};
+    const prereqMap: Record<string, any> = {};
     for (const row of moduleData) {
         prereqMap[row.module_code] = row.prereq_tree;
     }
 
-    const ans = {};
+    const ans: Record<string, string[]>= {};
 
     for (const moduleCode of moduleCodes) {
         ans[moduleCode] = [];
 
-        const tree = prereqMap[moduleCode];
+        const tree = prereqMap[moduleCode] as PrereqTree;
 
         if (!tree) {
             continue;
@@ -170,19 +168,10 @@ async function UserPrereqTree(userId) {
             let found = false;
 
             if (tree.or) {
-                found = tree.or.some(x =>
-                    x?.nOf
-                        ? n0f(x, prereqModule)
-                        : matches(prereqModule, x)
-                );
+                found = tree.or.some(x => typeof x !== 'string' && x.nOf ? n0f(x, prereqModule) : matches(prereqModule, x));
             } else if (tree.and) {
                 found = tree.and.some(group =>
-                    group.or?.some(x =>
-                        x?.nOf
-                            ? n0f(x, prereqModule)
-                            : matches(prereqModule, x)
-                    )
-                );
+                    group.or?.some(x => typeof x !== 'string' && x.nOf ? n0f(x, prereqModule) : matches(prereqModule, x)));
             }
 
             if (found) {
@@ -197,7 +186,7 @@ async function UserPrereqTree(userId) {
 
 
 
-async function getPrereqModuleCodes(moduleCode) {
+export async function getPrereqModuleCodes(moduleCode: string) {
     const { data, error } = await supabase
         .from('modules')
         .select('prereq_tree')
@@ -212,10 +201,10 @@ async function getPrereqModuleCodes(moduleCode) {
         return {};
     }
 
-    const tree = data.prereq_tree;
-    let ans = {};
+    const tree = data.prereq_tree as PrereqTree;
+    let ans: Record<number, any[]> = {};
 
-    const extract = x => {
+    const extract = (x: any) => {
         if (x?.nOf) {
             return x;
         }
@@ -237,8 +226,8 @@ async function getPrereqModuleCodes(moduleCode) {
     } else {
         let count = 1;
 
-        for (const group of tree.and) {
-            ans[count] = group.or
+        for (const group of tree.and ?? []) {
+            ans[count] = (group.or ?? [])
                 .map(extract)
                 .filter(Boolean);
 
@@ -249,7 +238,7 @@ async function getPrereqModuleCodes(moduleCode) {
     return ans;
 }
 
-async function missingPrereq(userId, moduleCode) {
+export async function missingPrereq(userId: string, moduleCode: string) {
     const { data, error } = await supabase
         .from('plan_modules')
         .select('module_code')
@@ -263,18 +252,18 @@ async function missingPrereq(userId, moduleCode) {
     const taken = data.map(x => x.module_code);
     const need = await getPrereqModuleCodes(moduleCode);
 
-    const ans = [];
+    const ans: any[] = [];
 
     for (const group of Object.values(need)) {
         let satisfied = false;
-        const missing = [];
+        const missing: any[] = [];
 
         for (const t of group) {
 
             if (t?.nOf) {
                 const [required, modules] = t.nOf;
 
-                const completed = modules.filter(m =>
+                const completed = modules.filter((m: string) =>
                     taken.some(mod => matches(mod, m))
                 ).length;
 
@@ -284,10 +273,10 @@ async function missingPrereq(userId, moduleCode) {
                 }
 
                 const remaining = modules
-                    .filter(m =>
+                    .filter((m: string) =>
                         !taken.some(mod => matches(mod, m))
                     )
-                    .map(m => m.replace(':D', ''));
+                    .map((m: string) => m.replace(':D', ''));
 
                 missing.push({
                     need: required - completed,
@@ -313,7 +302,7 @@ async function missingPrereq(userId, moduleCode) {
     return ans;
 }
 
-async function getPreclusions (moduleCode) {
+export async function getPreclusions (moduleCode: string) {
     const { data, error } = await supabase
         .from('modules')
         .select('preclusion')
@@ -327,7 +316,7 @@ async function getPreclusions (moduleCode) {
     return data?.preclusion ?? null;
 }
 
-async function fulfilledPreclusionsSoCantTakeMod (userId, moduleCode) {
+export async function fulfilledPreclusionsSoCantTakeMod (userId: string, moduleCode: string) {
     const { data, error } = await supabase
         .from('plan_modules')
         .select()
@@ -354,7 +343,7 @@ async function fulfilledPreclusionsSoCantTakeMod (userId, moduleCode) {
 }
 
 
-async function updatePlanModules(moduleCodes, userId, status) {
+export async function updatePlanModules(moduleCodes: string[], userId: string, status: string) {
     const rows = moduleCodes.map(moduleCode => ({
         user_id: userId,
         module_code: moduleCode,
@@ -370,7 +359,7 @@ async function updatePlanModules(moduleCodes, userId, status) {
     }
 }
 
-async function deletePlannedModule(userId, moduleCode) {
+export async function deletePlannedModule(userId: string, moduleCode: string) {
     
     const {error} = await supabase
         .from('plan_modules')
@@ -383,7 +372,7 @@ async function deletePlannedModule(userId, moduleCode) {
     }  
 }
 
-async function isModulePlanned (userId, moduleCode) {
+export async function isModulePlanned (userId: string, moduleCode: string) {
     const { data, error } = await supabase
         .from('plan_modules')
         .select('status')
@@ -402,19 +391,3 @@ async function isModulePlanned (userId, moduleCode) {
     return data.status === 'planned';
 }
 
-module.exports = {
-    checkPrereq,
-    numPrereq,
-    checkPreclusion,
-    fulfillReq,
-    UserPrereqTree,
-    getPrereqModuleCodes,
-    missingPrereq,
-    getPreclusions,
-    fulfilledPreclusionsSoCantTakeMod,
-    updatePlanModules,
-    isModulePlanned,
-    matches,
-    n0f
-
-}

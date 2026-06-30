@@ -1,6 +1,6 @@
-const supabase = require('./supabase');
+import supabase from './supabase';
 
-async function getUserProfile(userID) {
+export async function getUserProfile(userID: String) {
     const { data, error } = await supabase.from('user_profile').select().eq('user_id', userID).maybeSingle();
     if (error) {
         throw new Error(`Error fetching user profile: ${error.message}`);
@@ -8,7 +8,7 @@ async function getUserProfile(userID) {
     return data;
 }
 
-async function upsertUserProfile(userID, matricYear) {
+export async function upsertUserProfile(userID: String, matricYear: number) {
     const { data: existing, error: selErr } = await supabase
         .from('user_profile')
         .select('user_id')
@@ -40,7 +40,3 @@ async function upsertUserProfile(userID, matricYear) {
     return data;
 }
 
-module.exports = {
-    getUserProfile,
-    upsertUserProfile
-};

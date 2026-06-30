@@ -1,7 +1,6 @@
 const groupsDB = require('./groups');
 const timetableDB = require('./timetable');
 
-
 async function freeTimeFinder(groupId) {
     const groupMembers = await groupsDB.getGroupMembers(groupId);
     const userTimetables = (await Promise.all(groupMembers.filter(y => y.status === 'active')

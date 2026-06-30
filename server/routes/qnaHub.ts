@@ -1,24 +1,13 @@
-const supabase = require('../db/supabase');
-const express = require('express');
+import express, { Request, Response } from 'express';
+import supabase from '../db/supabase';
+import qnaEligibilityDB from '../db/qnaEligibilty';
+import authRequire from '../middleware/requireAuth';
+
 const router = express.Router();
-const qnaEligibilityDB = require('../db/qnaEligibilty');
 
-router.get('/', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(' ')[1];
-    
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const userID = user.id;
-    
 
-    req.user = userID;
+router.get('/', async (req: Request, res: Response) => {
+    const userID = req.user.id;
     
     try {
         const modules = await qnaEligibilityDB.getEligibleModules(userID);
@@ -31,28 +20,16 @@ router.get('/', async (req, res) => {
 });
 
 
-router.get('/:moduleCode/posts', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(' ')[1];
+router.get('/:moduleCode/posts', async (req: Request, res: Response) => {
     
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const userID = user.id;
-    
-
-    req.user = userID;
+    const userID = req.user.id;
     const moduleCode = req.params.moduleCode;
     
     try {
         const posts = await qnaEligibilityDB.getPostsForModule(moduleCode);
-        const postMap = posts.map(p => p.parent_id === null ? { ...p, replies: [] } : p);
-        const postIdToPost = {};
+        type Post = { id: string | number; parent_id: string | number | null; replies: Post[]; [key: string]: any };
+        const postMap: Post[] = posts.map((p: any) => ({ ...p, replies: [] } as Post));
+        const postIdToPost: Record<string | number, Post> = {};
         for (const post of postMap) {
             postIdToPost[post.id] = post;
         }
@@ -60,7 +37,7 @@ router.get('/:moduleCode/posts', async (req, res) => {
             if (post.parent_id) {
                 const parentPost = postIdToPost[post.parent_id];
                 if (parentPost) {
-                    parentPost.replies.push(post);
+                    parentPost.replies.push(post as Post);
                 }
             }
         }
@@ -72,24 +49,12 @@ router.get('/:moduleCode/posts', async (req, res) => {
     
 });
 
-router.post('/:moduleCode/posts', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(' ')[1];
+router.post('/:moduleCode/posts', async (req: Request, res: Response) => {
     
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const userID = user.id;
-
-    req.user = userID;
+    const userID = req.user.id;
     const moduleCode = req.params.moduleCode;
     const { type, content, parent_id } = req.body;
-    const { id: author_id, email: author_email } = user;
+    const { id: author_id, email: author_email } = req.user;
     
     if (type !== 'question' && type !== 'answer') {
         return res.status(400).json({ error: 'Invalid post type' });
@@ -118,8 +83,9 @@ router.post('/:moduleCode/posts', async (req, res) => {
             if (parentPost.type !== 'question') {
                 return res.status(400).json({ error: 'Parent post must be a question' });
             }
-        }  catch (err) {
-            console.error('Failed to fetch parent post:', err.message);
+        }  catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : String(err);
+            console.error('Failed to fetch parent post:', errorMessage);
             return res.status(400).json({ error: 'Invalid parent post ID' });
         }
     }
@@ -154,21 +120,8 @@ router.post('/:moduleCode/posts', async (req, res) => {
     
 });
 
-router.delete('/posts/:postId', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(' ')[1];
-    
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const userID = user.id;
-
-    req.user = userID;
+router.delete('/posts/:postId', async (req: Request, res: Response) => {
+    const userID = req.user.id;
     const postId = req.params.postId;
     
     try {
@@ -205,23 +158,11 @@ router.delete('/posts/:postId', async (req, res) => {
 });
 
 
-router.post('/posts/:id/upvote', async (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = authHeader.split(' ')[1];
+router.post('/posts/:id/upvote', async (req: Request, res: Response) => {
     
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const userID = user.id;
-
-    req.user = userID;
+    const userID = req.user.id;
     const postId = req.params.id;
-    const { id : user_id } = user;
+    const { id : user_id } = req.user;
 
     try {
         const tryUpVote = await supabase
@@ -266,4 +207,4 @@ router.post('/posts/:id/upvote', async (req, res) => {
 });
 
 
-module.exports = router;
+export default router;

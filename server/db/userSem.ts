@@ -1,7 +1,7 @@
-const userProfileDB = require('../db/userProfile');
+import { getUserProfile } from '../db/userProfile';
 
-async function getUserSemByUserID(userID) {
-    const profile = await userProfileDB.getUserProfile(userID);
+export async function getUserSemByUserID(userID: string) {
+    const profile = await getUserProfile(userID);
 
     if (!profile || profile.start_matric_year == null) {
         return null;
@@ -22,6 +22,3 @@ async function getUserSemByUserID(userID) {
     return sem;
 }
 
-module.exports = {
-    getUserSemByUserID
-};
