@@ -1,27 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Sidebar from '../components/Sidebar'
+import { BACKEND } from '../constants'
 
 const s = {
     page: { display: 'flex', minHeight: '100vh', background: '#fdf8f2' },
-    sidebar: { width: '220px', background: '#1a2744', minHeight: '100vh', padding: '28px 20px', display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, height: '100%' },
-    logoRow: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '36px' },
-    logoIcon: { width: '34px', height: '34px', background: '#b85c38', borderRadius: '8px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px', padding: '7px' },
-    sq1: { borderRadius: '2px', background: 'rgba(255,255,255,0.95)' },
-    sq2: { borderRadius: '2px', background: 'rgba(255,255,255,0.72)' },
-    sq3: { borderRadius: '2px', background: 'rgba(255,255,255,0.55)' },
-    sq4: { borderRadius: '2px', background: 'rgba(255,255,255,0.38)' },
-    wordmark: { fontSize: '17px', fontWeight: '600', color: '#fdf8f2', letterSpacing: '-0.04em' },
-    navLabel: { fontSize: '10px', fontFamily: "'JetBrains Mono', monospace", fontWeight: '600', letterSpacing: '0.07em', textTransform: 'uppercase', color: 'rgba(253,248,242,0.35)', marginBottom: '6px', padding: '0 8px', marginTop: '20px' },
-    navItem: { display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '6px', marginBottom: '2px', fontSize: '13px', color: 'rgba(253,248,242,0.65)', cursor: 'pointer' },
-    navItemActive: { display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '6px', marginBottom: '2px', fontSize: '13px', color: '#fdf8f2', fontWeight: '500', cursor: 'pointer', background: 'rgba(184,92,56,0.25)' },
-    navDot: { width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(253,248,242,0.3)', flexShrink: 0 },
-    navDotActive: { width: '6px', height: '6px', borderRadius: '50%', background: '#b85c38', flexShrink: 0 },
-    sidebarBottom: { marginTop: 'auto' },
-    userPill: { display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '8px', background: 'rgba(253,248,242,0.06)' },
-    avatar: { width: '30px', height: '30px', borderRadius: '50%', background: '#b85c38', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '600', color: 'white', flexShrink: 0 },
-    userName: { fontSize: '12px', fontWeight: '500', color: '#fdf8f2' },
-    userEmail: { fontSize: '10px', color: 'rgba(253,248,242,0.4)', fontFamily: "'JetBrains Mono', monospace" },
-    logoutBtn: { background: 'none', border: 'none', color: 'rgba(253,248,242,0.4)', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', marginTop: '8px', padding: '0 10px', textAlign: 'left' },
     main: { marginLeft: '220px', flex: 1, padding: '36px 40px' },
     topbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' },
     pageTitle: { fontSize: '22px', fontWeight: '600', color: '#1a2744', letterSpacing: '-0.025em' },
@@ -90,7 +73,7 @@ function Dashboard() {
         setSavingMatric(true)
         setMatricError('')
         try {
-            const res = await fetch('https://modmapper-orbital2026.onrender.com/su/userProfile', {
+            const res = await fetch(`${BACKEND}/su/userProfile`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -110,14 +93,6 @@ function Dashboard() {
             setSavingMatric(false)
         }
     }
-
-    const handleLogout = () => {
-        localStorage.removeItem('token')
-        localStorage.removeItem('matricYearSet')
-        navigate('/login')
-    }
-
-    const initials = userEmail ? userEmail.slice(0, 2).toUpperCase() : 'MM'
 
     return (
         <div style={s.page}>
@@ -153,41 +128,8 @@ function Dashboard() {
                 </div>
             )}
 
-            <div style={s.sidebar}>
-                <div style={s.logoRow}>
-                    <div style={s.logoIcon}>
-                        <div style={s.sq1}></div><div style={s.sq2}></div>
-                        <div style={s.sq3}></div><div style={s.sq4}></div>
-                    </div>
-                    <span style={s.wordmark}>ModMapper</span>
-                </div>
-
-                <div style={s.navLabel}>Plan</div>
-                <div style={s.navItemActive}><div style={s.navDotActive}></div>Dashboard</div>
-                <div style={s.navItem} onClick={() => navigate('/timetable')}><div style={s.navDot}></div>Timetable</div>
-                <div style={s.navItem}><div style={s.navDot}></div>4-Year Planner</div>
-
-                <div style={s.navLabel}>Explore</div>
-                <div style={s.navItem} onClick={() => navigate('/modules')}><div style={s.navDot}></div>Module Search</div>
-                <div style={s.navItem}><div style={s.navDot}></div>UE Recommender</div>
-                <div style={s.navItem} onClick={() => navigate('/qna-hub')}><div style={s.navDot} />Q&A Community</div>
-
-                <div style={s.navLabel}>Tools</div>
-                <div style={s.navItem} onClick={() => navigate('/su-optimiser')}><div style={s.navDot}></div>S/U Optimiser</div>
-                <div style={s.navItem} onClick={() => navigate('/group-finder')}><div style={s.navDot}></div>Group Finder</div>
-                <div style={s.navItem} onClick={() => navigate('/bidding-heatmap')}><div style={s.navDot}></div>Bidding Heatmap</div>
-
-                <div style={s.sidebarBottom}>
-                    <div style={s.userPill}>
-                        <div style={s.avatar}>{initials}</div>
-                        <div>
-                            <div style={s.userName}>My Account</div>
-                            <div style={s.userEmail}>{userEmail || 'NUS Student'}</div>
-                        </div>
-                    </div>
-                    <button style={s.logoutBtn} onClick={handleLogout}>Sign out</button>
-                </div>
-            </div>
+            {/* Shared Sidebar component which replaces ~50 lines of duplicated JSX */}
+            <Sidebar active="dashboard" userEmail={userEmail} />
 
             <div style={s.main}>
                 <div style={s.topbar}>
