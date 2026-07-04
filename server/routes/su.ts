@@ -33,7 +33,6 @@ router.get('/', async (req: Request, res: Response) => {
         const usedSu = userSuInfoData?.used_su ?? 0;
         const totalSu = userSuInfoData?.total_su ?? suPolicyData.total_su;
 
-        // FIX: getTimetableByUserID returns the data directly
         const timetableData = await timetableDB.getTimetableByUserID(userID);
 
         const moduleCodes = timetableData.map((entry: any) => entry.module_code);

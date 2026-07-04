@@ -1,6 +1,10 @@
-type PrereqLeaf = string | { nOf: [number, string[]] };
-type PrereqTree = { or?: PrereqLeaf[]; and?: { or?: PrereqLeaf[] }[] };
+import { PrereqTree } from '../types/prereq';
+import { checkPrereq as checkPrereqTree } from '../domain/prereq/checkPrereq';
 import supabase from './supabase';
+import { countPrereq } from '../domain/prereq/countPrereq';
+import { buildUserPrereqTree } from '../domain/prereq/buildUserPrereqTree';
+import { getPrereqModules } from '../domain/prereq/getPrereqModuleCodes';
+import { anyMissingPrereq } from '../domain/prereq/anyMissingPrereq';
 
 export async function checkPrereq(moduleCode: string, prereqModule: string) {
     const { data, error } = await supabase
@@ -23,43 +27,10 @@ export async function checkPrereq(moduleCode: string, prereqModule: string) {
         return false;
     }
 
-    if (tree.or) {
-        return tree.or.some(x =>
-            typeof x !== 'string' && x.nOf ? n0f(x, prereqModule) : matches(prereqModule, x)
-        );
-    }
-
-    if (tree.and) {
-        return tree.and.some(group =>
-            group.or?.some(x =>
-                typeof x !== 'string' && x.nOf ? n0f(x, prereqModule) : matches(prereqModule, x)
-            )
-        );
-    }
-
-    return false;
-}
-
-function n0f(node: { nOf: [number, string[]] }, moduleCode: string) {
-    const [, modules] = node.nOf;
-
-    return modules.some(m => matches(moduleCode, m));
+    return checkPrereqTree(tree, prereqModule);
 }
 
 
-function matches(prereq: string, candidate: unknown) {
-    if (typeof candidate !== 'string') {
-        return false;
-    }
-
-    const clean = candidate.replace(':D', '');
-
-    if (clean.endsWith('%')) {
-        return prereq.startsWith(clean.slice(0, -1));
-    }
-
-    return clean === prereq;
-}
 
 export async function numPrereq (moduleCode: string) {
     const { data, error } = await supabase
@@ -78,19 +49,7 @@ export async function numPrereq (moduleCode: string) {
 
     const tree = data.prereq_tree as PrereqTree;
 
-    if (!tree) {
-        return 0;
-    }
-    if (tree.or) {
-        return 1;
-    }
-    else {
-        let count = 0;
-        for (const temp of tree.and ?? []) {
-            count++;
-        }
-        return count;
-    }
+    return countPrereq(tree);
     
 }
 
@@ -153,34 +112,7 @@ export async function UserPrereqTree(userId: string) {
         prereqMap[row.module_code] = row.prereq_tree;
     }
 
-    const ans: Record<string, string[]>= {};
-
-    for (const moduleCode of moduleCodes) {
-        ans[moduleCode] = [];
-
-        const tree = prereqMap[moduleCode] as PrereqTree;
-
-        if (!tree) {
-            continue;
-        }
-
-        for (const prereqModule of moduleCodes) {
-            let found = false;
-
-            if (tree.or) {
-                found = tree.or.some(x => typeof x !== 'string' && x.nOf ? n0f(x, prereqModule) : matches(prereqModule, x));
-            } else if (tree.and) {
-                found = tree.and.some(group =>
-                    group.or?.some(x => typeof x !== 'string' && x.nOf ? n0f(x, prereqModule) : matches(prereqModule, x)));
-            }
-
-            if (found) {
-                ans[moduleCode].push(prereqModule);
-            }
-        }
-    }
-
-    return ans;
+    return buildUserPrereqTree(moduleCodes, prereqMap);
 }
 
 
@@ -202,40 +134,7 @@ export async function getPrereqModuleCodes(moduleCode: string) {
     }
 
     const tree = data.prereq_tree as PrereqTree;
-    let ans: Record<number, any[]> = {};
-
-    const extract = (x: any) => {
-        if (x?.nOf) {
-            return x;
-        }
-
-        return (
-            x.match(/[A-Z]{2,4}\d{4}[A-Z]{0,3}%?/)?.[0]
-            ?? null
-        );
-    };
-
-    if (!tree) {
-        return ans;
-    }
-
-    if (tree.or) {
-        ans[1] = tree.or
-            .map(extract)
-            .filter(Boolean);
-    } else {
-        let count = 1;
-
-        for (const group of tree.and ?? []) {
-            ans[count] = (group.or ?? [])
-                .map(extract)
-                .filter(Boolean);
-
-            count++;
-        }
-    }
-
-    return ans;
+    return getPrereqModules(tree);
 }
 
 export async function missingPrereq(userId: string, moduleCode: string) {
@@ -252,54 +151,7 @@ export async function missingPrereq(userId: string, moduleCode: string) {
     const taken = data.map(x => x.module_code);
     const need = await getPrereqModuleCodes(moduleCode);
 
-    const ans: any[] = [];
-
-    for (const group of Object.values(need)) {
-        let satisfied = false;
-        const missing: any[] = [];
-
-        for (const t of group) {
-
-            if (t?.nOf) {
-                const [required, modules] = t.nOf;
-
-                const completed = modules.filter((m: string) =>
-                    taken.some(mod => matches(mod, m))
-                ).length;
-
-                if (completed >= required) {
-                    satisfied = true;
-                    break;
-                }
-
-                const remaining = modules
-                    .filter((m: string) =>
-                        !taken.some(mod => matches(mod, m))
-                    )
-                    .map((m: string) => m.replace(':D', ''));
-
-                missing.push({
-                    need: required - completed,
-                    choices: remaining
-                });
-
-                continue;
-            }
-
-            if (taken.some(mod => matches(mod, t))) {
-                satisfied = true;
-                break;
-            }
-
-            missing.push(t);
-        }
-
-        if (!satisfied) {
-            ans.push(missing);
-        }
-    }
-
-    return ans;
+    return anyMissingPrereq(need, taken);
 }
 
 export async function getPreclusions (moduleCode: string) {

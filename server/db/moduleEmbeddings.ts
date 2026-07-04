@@ -1,28 +1,33 @@
 import supabase from './supabase';
 import { embed } from '../services/embeddings';
-const crypto = require('crypto');
+import { sha256, compareHashes} from '../domain/embedding/hash';
 
-const sha256 = (text: string) => crypto.createHash('sha256').update(text).digest('hex');
 
 export async function syncModuleEmbeddings() {
   const { data: modules, error: modulesError } = await supabase
     .from('modules')
     .select('module_code, module_name, description');
-  if (modulesError) throw new Error(`Error fetching modules: ${modulesError.message}`);
+  
+  if (modulesError) {
+    throw new Error(`Error fetching modules: ${modulesError.message}`);
+  }
 
   const { data: existing, error: embeddingsError } = await supabase
     .from('module_embeddings')
     .select('module_code, source_hash');
-  if (embeddingsError) throw new Error(`Error fetching embeddings: ${embeddingsError.message}`);
+  
+  if (embeddingsError) {
+    throw new Error(`Error fetching embeddings: ${embeddingsError.message}`);
+  }
 
   const existingMap = new Map(existing.map(row => [row.module_code, row.source_hash]));
 
   for (const row of modules.slice(0, 3)) {
     const text = `${row.module_name ?? ''} ${row.description ?? ''}`.trim();
-    const currentHash = sha256(text);              
     const storedHash = existingMap.get(row.module_code);  
+    const currentHash = sha256(text);
     
-    if (storedHash === currentHash) continue;
+    if (compareHashes(currentHash, storedHash)) continue;
 
     try {
       const embedding = await embed(text, 'RETRIEVAL_DOCUMENT');

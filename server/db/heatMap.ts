@@ -1,119 +1,123 @@
 import supabase from './supabase';
 import { getTimetableBySemNumber } from './timetable';
 import { getUserSemByUserID } from './userSem';
-
+import { currentAcademicSemester } from '../domain/calendar/currentAcaSem';
 
 export async function needToUpdateSlotDemand(moduleCode: string) {
-    const ifModuleExists = await supabase
+    const { data: existing, error } = await supabase
         .from('slot_demand')
-        .select('module_code')
+        .select('computed_at')
         .eq('module_code', moduleCode);
 
-    if (ifModuleExists.error) {
-        throw new Error(`Error fetching timetable: ${ifModuleExists.error.message}`);
+    if (error) {
+        throw new Error(`Error fetching slot demand: ${error.message}`);
     }
 
-    let needToUpdate = false;
+    let needToUpdate = existing.length === 0;
 
-    if(ifModuleExists.data.length > 0) {
-        const slotDemandTimeStamp = await supabase
-            .from('slot_demand')
-            .select('computed_at')
-            .eq('module_code', moduleCode)
-            .limit(1); 
-        
-        if(slotDemandTimeStamp.error) {
-            throw new Error(`Error fetching timetable: ${slotDemandTimeStamp.error.message}`);
-        }
-        
-        const moduleCachedTimeStamp = await supabase
+    if (!needToUpdate) {
+        const { data: moduleData, error: moduleError } = await supabase
             .from('modules')
             .select('cached_at')
             .eq('module_code', moduleCode)
             .single();
-        
-        if(moduleCachedTimeStamp.error) {
-            throw new Error(`Error fetching timetable: ${moduleCachedTimeStamp.error.message}`);
+
+        if (moduleError) {
+            throw new Error(`Error fetching module: ${moduleError.message}`);
         }
 
-        if (slotDemandTimeStamp.data[0].computed_at < moduleCachedTimeStamp.data.cached_at) {
+        if (existing[0].computed_at < moduleData.cached_at) {
             needToUpdate = true;
         }
     }
 
-    const month = new Date().getMonth() + 1;
-    const beforeMay =  month < 5;
-
-    if (ifModuleExists.data.length === 0 || needToUpdate) {
-        const academicYearData = await supabase
+    if (needToUpdate) {
+        const { data: moduleData, error: moduleError } = await supabase
             .from('modules')
             .select('semesters')
             .eq('module_code', moduleCode)
             .single();
-        
-        if(academicYearData.error) {
-            throw new Error(`Error fetching timetable: ${academicYearData.error.message}`);
+
+        if (moduleError) {
+            throw new Error(`Error fetching module timetable: ${moduleError.message}`);
         }
 
-        let whichSem = 1;
+        const semData = moduleData.semesters.find(
+            (s: any) => s.semester === currentAcademicSemester()
+        );
 
-        if (beforeMay) {
-            whichSem = 2;
+        if (!semData) {
+            throw new Error('No timetable found for current academic semester');
         }
-        
-        const semData = academicYearData.data.semesters.find((s: any) => s.semester === whichSem);
+
         await updateSlot(moduleCode, semData);
     }
-
 }
 
 export async function updateSlot(moduleCode: string, semData: any) {
-    const deleteResult = await supabase
+    const { error: deleteError } = await supabase
         .from('slot_demand')
         .delete()
         .eq('module_code', moduleCode);
 
-    if (deleteResult.error) {
-        throw new Error(`Error updating slot demand: ${deleteResult.error.message}`);
+    if (deleteError) {
+        throw new Error(`Error updating slot demand: ${deleteError.message}`);
     }
-    
+
     for (const slot of semData.timetable) {
-        await supabase.from('slot_demand').upsert({
-            module_code: moduleCode,
-            day: slot.day,
-            max_size: slot.size,
-            venue: slot.venue,
-            class_no: slot.classNo,
-            lesson_type: slot.lessonType
-        }, {
-            onConflict: 'module_code,lesson_type,class_no'
-        });
+        const { error } = await supabase
+            .from('slot_demand')
+            .upsert(
+                {
+                    module_code: moduleCode,
+                    day: slot.day,
+                    max_size: slot.size,
+                    venue: slot.venue,
+                    class_no: slot.classNo,
+                    lesson_type: slot.lessonType
+                },
+                {
+                    onConflict: 'module_code,lesson_type,class_no'
+                }
+            );
+
+        if (error) {
+            throw new Error(`Error updating slot demand: ${error.message}`);
+        }
     }
 }
 
-export async function getSlotDemand(slot: { module_code: string; lesson_type: string; class_no: string }) {
-    const userIDs = await supabase
+export async function getSlotDemand(slot: {
+    module_code: string;
+    lesson_type: string;
+    class_no: string;
+}) {
+    const { data: userIDs, error } = await supabase
         .from('user_profile')
-        .select('user_id')
-    
-    if (userIDs.error) {
-        throw new Error(`Error fetching timetable: ${userIDs.error.message}`);
+        .select('user_id');
+
+    if (error) {
+        throw new Error(`Error fetching users: ${error.message}`);
     }
 
     let count = 0;
 
-    for (const ID of userIDs.data) {
-        const currentSem = await getUserSemByUserID(ID.user_id);
+    for (const { user_id } of userIDs) {
+        const currentSem = await getUserSemByUserID(user_id);
+
         if (currentSem === null) {
             continue;
         }
-        const timetableData = await getTimetableBySemNumber(currentSem, ID.user_id);
+
+        const timetableData = await getTimetableBySemNumber(currentSem, user_id);
 
         for (const lesson of timetableData[0]?.timetable_data ?? []) {
-            if (lesson.moduleCode === slot.module_code &&
+            if (
+                lesson.moduleCode === slot.module_code &&
                 lesson.lessonType === slot.lesson_type &&
-                lesson.classNo === slot.class_no) {
-                    count ++;
+                lesson.classNo === slot.class_no
+            ) {
+                count++;
             }
         }
     }
@@ -122,22 +126,27 @@ export async function getSlotDemand(slot: { module_code: string; lesson_type: st
 }
 
 export async function updateHeatMap(moduleCode: string) {
-    const slotDemandData = await supabase
+    const { data: slots, error } = await supabase
         .from('slot_demand')
         .select('*')
         .eq('module_code', moduleCode);
 
-    if (slotDemandData.error) {
-        throw new Error(`Error fetching timetable: ${slotDemandData.error.message}`);
+    if (error) {
+        throw new Error(`Error fetching slot demand: ${error.message}`);
     }
 
-    for (const slot of slotDemandData.data) {
+    for (const slot of slots) {
         const demand = await getSlotDemand(slot);
-        await supabase.from('slot_demand')
+
+        const { error: updateError } = await supabase
+            .from('slot_demand')
             .update({ user_count: demand })
             .eq('module_code', moduleCode)
             .eq('lesson_type', slot.lesson_type)
             .eq('class_no', slot.class_no);
+
+        if (updateError) {
+            throw new Error(`Error updating heatmap: ${updateError.message}`);
+        }
     }
 }
-

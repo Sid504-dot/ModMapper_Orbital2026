@@ -1,4 +1,3 @@
-import supabase from '../db/supabase';
 import express, { Request, Response } from 'express';
 const router = express.Router();
 import * as groupsDB from '../db/groups';

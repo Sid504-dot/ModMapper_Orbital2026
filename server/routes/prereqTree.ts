@@ -1,6 +1,5 @@
 import express, { Request, Response } from 'express';
 const router = express.Router();
-import supabase from '../db/supabase';
 import * as prereqTreeDB from '../db/prereqTree';
 import * as qnaEligibilityDB from '../db/qnaEligibilty';
 import { requireAuth } from '../middleware/requireAuth';

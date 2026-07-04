@@ -21,7 +21,7 @@ router.get('/', async (req: Request, res: Response) => {
         try {
             
             const newData = await nusmodsService.moduleGetData(b);
-            const preclusion = (newData.preclusionRule || '').match(/[A-Z]{2,4}\d{4}[A-Z]{0,3}/g) ?? [];
+            const preclusion = (newData.preclusionRule || '').match(/[A-Z]{2,4}\d{4}[A-Z]{0,3}/g) ?? []; //regrex pattern to get just the module code from the entire sentence of preclusion
             await modulesDB.upsertModule({
                 module_code: newData.moduleCode,
                 module_name: newData.title,
