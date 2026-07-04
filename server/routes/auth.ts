@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 const router = express.Router();
-const supabase = require('../db/supabase');
+import supabase from '../db/supabase';
 
 router.post('/register', async (req: Request, res: Response) => {
   const { email, password } = req.body;
