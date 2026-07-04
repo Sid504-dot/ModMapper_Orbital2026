@@ -3,7 +3,7 @@ import express from 'express';
 import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 
 jest.mock('../../middleware/requireAuth', () => ({
-    requireAuth: (req: any, res: any, next: any) => {
+    requireAuth: (req: any, _res: any, next: any) => {
         req.user = { id: 'user-123' };
         next();
     }
@@ -29,23 +29,15 @@ const app = express();
 app.use(express.json());
 app.use('/su', suRouter);
 
-const mockGetSem =
-    userSemDB.getUserSemByUserID as jest.MockedFunction<typeof userSemDB.getUserSemByUserID>;
+const mockGetSem = userSemDB.getUserSemByUserID as jest.MockedFunction<typeof userSemDB.getUserSemByUserID>;
 
-const mockGetPolicy =
-    suPolicyDB.getSuPolicy as jest.MockedFunction<typeof suPolicyDB.getSuPolicy>;
+const mockGetPolicy = suPolicyDB.getSuPolicy as jest.MockedFunction<typeof suPolicyDB.getSuPolicy>;
 
-const mockGetSuInfo =
-    userSuInfoDB.getSuInfo as jest.MockedFunction<typeof userSuInfoDB.getSuInfo>;
+const mockGetSuInfo = userSuInfoDB.getSuInfo as jest.MockedFunction<typeof userSuInfoDB.getSuInfo>;
 
-const mockGetTimetable =
-    timetableDB.getTimetableByUserID as jest.MockedFunction<typeof timetableDB.getTimetableByUserID>;
+const mockGetTimetable = timetableDB.getTimetableByUserID as jest.MockedFunction<typeof timetableDB.getTimetableByUserID>;
 
-const mockGetSuEligible =
-    moduleDB.getSuAbleModulesByCodes as jest.MockedFunction<typeof moduleDB.getSuAbleModulesByCodes>;
-
-const mockUpsertProfile =
-    userProfileDB.upsertUserProfile as jest.MockedFunction<typeof userProfileDB.upsertUserProfile>;
+const mockGetSuEligible = moduleDB.getSuAbleModulesByCodes as jest.MockedFunction<typeof moduleDB.getSuAbleModulesByCodes>;
 
 beforeEach(() => {
     jest.clearAllMocks();
