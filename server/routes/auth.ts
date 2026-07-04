@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 const router = express.Router();
-const supabase = require('../db/supabase');
+import supabase from '../db/supabase';
 import { ApiResponse } from '../types/apiResponse';
 
 router.post('/register', async (req: Request, res: Response<ApiResponse>) => {
