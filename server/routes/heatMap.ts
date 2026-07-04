@@ -1,28 +1,54 @@
-import express, { Request, Response, Router } from 'express';
+import express, { Request, Response } from 'express';
 const router = express.Router();
 import supabase from '../db/supabase';
 import { requireAuth } from '../middleware/requireAuth';
 router.use(requireAuth);
+import { ApiResponse } from '../types/apiResponse';
 
-router.get('/', async (req: Request, res: Response) => {
-    const moduleCode = req.query.moduleCode;
+router.get('/', async (req: Request, res: Response<ApiResponse>) => {
+    const moduleCode = req.query.moduleCode as string;
 
     if (!moduleCode) {
-        return res.status(400).json({ error: 'Module code is required' });
+        return res.status(400).json({
+            success: false,
+            message: 'Module code is required',
+            data: null,
+            error: 'Missing moduleCode'
+        });
     }
 
     try {
-
-        const slotDemandData = await supabase
+        const { data, error } = await supabase
             .from('slot_demand')
             .select('*')
             .eq('module_code', moduleCode);
 
-        res.json({ data: slotDemandData.data });
+        if (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to fetch heat map data',
+                data: null,
+                error: error.message
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Heat map data fetched successfully',
+            data: data,
+            error: null
+        });
+
     } catch (error) {
         console.error('Error fetching heat map data:', error);
-        res.status(500).json({ error: 'Internal server error' });
-     }
+
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            data: null,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
 });
 
-export default Router
+export default router;

@@ -5,18 +5,23 @@ import * as timetableDB from '../db/timetable';
 import * as userSuInfoDB from '../db/userSuInfo';
 import * as moduleDB from '../db/modules';
 import * as userSemDB from '../db/userSem';
-import * as userProfileDB from'../db/userProfile';
+import * as userProfileDB from '../db/userProfile';
 import { requireAuth } from '../middleware/requireAuth';
 router.use(requireAuth);
+import { ApiResponse } from '../types/apiResponse';
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response<ApiResponse>) => {
     const userID = req.user.id;
+
     try {
         const sem = await userSemDB.getUserSemByUserID(userID);
 
         if (sem == null) {
             return res.status(400).json({
-                error: 'Please set your matriculation year first.'
+                success: false,
+                message: 'Matriculation year not set',
+                data: null,
+                error: 'Missing semester data'
             });
         }
 
@@ -42,7 +47,7 @@ router.get('/', async (req: Request, res: Response) => {
 
         const modules = timetableData.map((entry: any) => {
             const mod = (suAbleModules.data ?? []).find(
-                m => m.module_code === entry.module_code
+                (m: any) => m.module_code === entry.module_code
             );
 
             return {
@@ -51,85 +56,136 @@ router.get('/', async (req: Request, res: Response) => {
             };
         });
 
-        res.json({
-            group_remaining: groupCap - usedSu,
-            suPolicy: suPolicyData,
-            timetable: timetableData,
-            userSuInfo: userSuInfoData,
-            groupCap,
-            currentGroup,
-            usedSu,
-            totalSu,
-            modules
+        return res.status(200).json({
+            success: true,
+            message: 'SU dashboard fetched successfully',
+            data: {
+                group_remaining: groupCap - usedSu,
+                suPolicy: suPolicyData,
+                timetable: timetableData,
+                userSuInfo: userSuInfoData,
+                groupCap,
+                currentGroup,
+                usedSu,
+                totalSu,
+                modules
+            },
+            error: null
         });
-    } catch (error: unknown) {
+
+    } catch (error) {
         console.error('Error fetching SU data:', error);
-        const message = error instanceof Error ? error.message : String(error);
-        res.status(500).json({ error: message });
+
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to fetch SU dashboard',
+            data: null,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
     }
 });
 
-router.post('/userProfile', async (req,res) => {
+router.post('/userProfile', async (req: Request, res: Response<ApiResponse>) => {
     const userID = req.user.id;
 
     try {
+        const { matricYear } = req.body;
 
-        const {matricYear} = req.body;
-
-        if(!matricYear) {
-            return res.status(400).json({error: 'Matric year is required'});
+        if (!matricYear) {
+            return res.status(400).json({
+                success: false,
+                message: 'Matric year is required',
+                data: null,
+                error: 'Missing matricYear'
+            });
         }
 
-        try {
-            const userProfile = await userProfileDB.upsertUserProfile(userID, matricYear);
-            res.json({message: 'User profile updated successfully', userProfile});
-        } catch(error) {
-            console.error('Error updating user profile:', error);
-            res.status(500).json({error: 'Internal Server Error'});
-    }} catch(error) {
-        console.error('Error fetching user:', error);
-        return res.status(401).json({error: 'Unauthorized 2'});
+        const userProfile =
+            await userProfileDB.upsertUserProfile(userID, matricYear);
+
+        return res.status(200).json({
+            success: true,
+            message: 'User profile updated successfully',
+            data: userProfile,
+            error: null
+        });
+
+    } catch (error) {
+        console.error('Error updating user profile:', error);
+
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to update user profile',
+            data: null,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
     }
 });
 
-router.post('/info', async (req: Request, res: Response) => {
+router.post('/info', async (req: Request, res: Response<ApiResponse>) => {
     const userID = req.user.id;
 
     try {
+        const { totalSu, usedSU } = req.body;
 
-        const {totalSu, usedSU} = req.body;
-        
-        if(totalSu === undefined || usedSU === undefined) {
-            return res.status(400).json({error: 'Total SU and Used SU are required'});
+        if (totalSu === undefined || usedSU === undefined) {
+            return res.status(400).json({
+                success: false,
+                message: 'Total SU and Used SU are required',
+                data: null,
+                error: 'Missing fields'
+            });
         }
 
-        try {
-            const userSuInfo = await userSuInfoDB.upsertSuInfo(userID, totalSu, usedSU);
-            res.json({message: 'User SU info updated successfully', userSuInfo});
-        } catch(error) {
-            console.error('Error updating user SU info:', error);
-            res.status(500).json({error: 'Internal Server Error'});
-    }} catch(error) {
-        console.error('Error fetching user:', error);
-        return res.status(401).json({error: 'Unauthorized 2'});
+        const userSuInfo =
+            await userSuInfoDB.upsertSuInfo(userID, totalSu, usedSU);
+
+        return res.status(200).json({
+            success: true,
+            message: 'SU info updated successfully',
+            data: userSuInfo,
+            error: null
+        });
+
+    } catch (error) {
+        console.error('Error updating user SU info:', error);
+
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to update SU info',
+            data: null,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
     }
 });
 
-router.post('/eligible', async (req: Request, res: Response) => {
+router.post('/eligible', async (req: Request, res: Response<ApiResponse>) => {
     const userID = req.user.id;
 
     try {
-        
-        const userReqModules = req.body.map((m: any) => m.moduleCode);
-        const { data: suAbleModules } = await moduleDB.getSuAbleModulesByCodes(userReqModules);
+        const userReqModules =
+            req.body.map((m: any) => m.moduleCode);
 
-        res.json({suAbleModules});
-    } catch(error) {
-        console.error('Error fetching user:', error);
-        return res.status(401).json({error: 'Unauthorized 2'});
+        const { data } =
+            await moduleDB.getSuAbleModulesByCodes(userReqModules);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Eligible modules fetched successfully',
+            data: data,
+            error: null
+        });
+
+    } catch (error) {
+        console.error('Error fetching eligible modules:', error);
+
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to fetch eligible modules',
+            data: null,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
     }
 });
-
-
 
 export default router;
