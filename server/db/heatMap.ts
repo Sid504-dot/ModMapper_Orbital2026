@@ -87,11 +87,7 @@ export async function updateSlot(moduleCode: string, semData: any) {
     }
 }
 
-export async function getSlotDemand(slot: {
-    module_code: string;
-    lesson_type: string;
-    class_no: string;
-}) {
+export async function getSlotDemand(slot: { module_code: string; lesson_type: string; class_no: string}) {
     const { data: userIDs, error } = await supabase
         .from('user_profile')
         .select('user_id');
@@ -110,8 +106,16 @@ export async function getSlotDemand(slot: {
         }
 
         const timetableData = await getTimetableBySemNumber(currentSem, user_id);
+        const raw = timetableData[0]?.timetable_data;
 
-        for (const lesson of timetableData[0]?.timetable_data ?? []) {
+        if (!Array.isArray(raw)) {
+            if (raw != null) {
+                console.warn(`Skipping non-array timetable_data for user ${user_id}`);
+            }
+            continue;
+        }
+
+        for (const lesson of raw) {
             if (
                 lesson.moduleCode === slot.module_code &&
                 lesson.lessonType === slot.lesson_type &&
@@ -150,3 +154,5 @@ export async function updateHeatMap(moduleCode: string) {
         }
     }
 }
+
+
