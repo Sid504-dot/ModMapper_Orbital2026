@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import { BACKEND, DAYS, DAY_LABELS, MODULE_COLOURS } from '../constants'
 
