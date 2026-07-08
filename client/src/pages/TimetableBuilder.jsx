@@ -75,7 +75,6 @@ const s = {
 
 
 function TimetableBuilder() {
-    const navigate = useNavigate()
     const [userEmail] = useState(() => localStorage.getItem('userEmail') || '')
     const [addedModules, setAddedModules] = useState([])
     const [searchQuery, setSearchQuery] = useState('')

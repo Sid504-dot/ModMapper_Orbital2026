@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import { BACKEND } from '../constants'
@@ -57,7 +57,6 @@ const modules = [
 ]
 
 function Dashboard() {
-    const navigate = useNavigate()
     const [userEmail] = useState(() => localStorage.getItem('userEmail') || '')
     const [showMatricModal, setShowMatricModal] = useState(() => !localStorage.getItem('matricYearSet'))
     const [matricYear, setMatricYear] = useState(new Date().getFullYear())
