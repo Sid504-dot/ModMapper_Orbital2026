@@ -38,12 +38,6 @@ function QnAHub() {
     const [moduleList, setModuleList] = useState([])
     const [searchError, setSearchError] = useState('')
 
-    // Auth guard
-    useEffect(() => {
-        const token = localStorage.getItem('token')
-        if (!token) navigate('/login')
-    }, [navigate])
-
     // Fetch module list for validation — filters in memory so search is instant
     useEffect(() => {
         fetch('https://api.nusmods.com/v2/2024-2025/moduleList.json')

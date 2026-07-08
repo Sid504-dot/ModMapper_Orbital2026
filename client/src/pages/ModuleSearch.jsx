@@ -53,11 +53,6 @@ function ModuleSearch() {
     const [query, setQuery] = useState('')
     const [loading, setLoading] = useState(true)
 
-    // Auth guard and data fetch are kept in separate effects intentionally as one handles routing, the other handles data. Mixing them causes issues
-    useEffect(() => {
-        const token = localStorage.getItem('token')
-        if (!token) navigate('/login')
-    }, [navigate])
 
     useEffect(() => {
         fetch('https://api.nusmods.com/v2/2024-2025/moduleList.json')

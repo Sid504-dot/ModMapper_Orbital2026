@@ -103,12 +103,6 @@ function GroupFinder() {
     const [inviteCopied, setInviteCopied] = useState(false)
     const [loadingSlots, setLoadingSlots] = useState(false)
 
-    // Auth guard — redirect to login if no token
-    useEffect(() => {
-        const token = localStorage.getItem('token')
-        if (!token) navigate('/login')
-    }, [navigate])
-
 
 
     // Helper that returns headers for every authenticated request

@@ -10,6 +10,7 @@ import ModuleQnA from './pages/ModuleQnA'
 import GroupFinder from './pages/GroupFinder'
 import JoinGroup from './pages/JoinGroup'
 import BiddingHeatmap from './pages/BiddingHeatmap'
+import AuthGuard from './components/AuthGuard'
 
 function App() {
   return (
@@ -17,15 +18,15 @@ function App() {
       <Routes>
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/modules" element={<ModuleSearch />} />
-        <Route path="/timetable" element={<TimetableBuilder />} />
-        <Route path="/su-optimiser" element={<SUOptimiser />} />
-        <Route path="/qna-hub" element={<QnAHub />} />
-        <Route path="/qna-hub/:moduleCode" element={<ModuleQnA />} />
-        <Route path="/group-finder" element={<GroupFinder />} />
-        <Route path="/group-finder/join/:inviteToken" element={<JoinGroup />} />
-        <Route path="/bidding-heatmap" element={<BiddingHeatmap />} />
+        <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
+        <Route path="/modules" element={<AuthGuard><ModuleSearch /></AuthGuard>} />
+        <Route path="/timetable" element={<AuthGuard><TimetableBuilder /></AuthGuard>} />
+        <Route path="/su-optimiser" element={<AuthGuard><SUOptimiser /></AuthGuard>} />
+        <Route path="/qna-hub" element={<AuthGuard><QnAHub /></AuthGuard>} />
+        <Route path="/qna-hub/:moduleCode" element={<AuthGuard><ModuleQnA /></AuthGuard>} />
+        <Route path="/group-finder" element={<AuthGuard><GroupFinder /></AuthGuard>} />
+        <Route path="/group-finder/join/:inviteToken" element={<AuthGuard><JoinGroup /></AuthGuard>} />
+        <Route path="/bidding-heatmap" element={<AuthGuard><BiddingHeatmap /></AuthGuard>} />
       </Routes>
     </BrowserRouter>
   )

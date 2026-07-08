@@ -64,11 +64,6 @@ function Dashboard() {
     const [savingMatric, setSavingMatric] = useState(false)
     const [matricError, setMatricError] = useState('')
 
-    useEffect(() => {
-        const token = localStorage.getItem('token')
-        if (!token) navigate('/login')
-    }, [navigate])
-
     const handleSaveMatricYear = async () => {
         setSavingMatric(true)
         setMatricError('')

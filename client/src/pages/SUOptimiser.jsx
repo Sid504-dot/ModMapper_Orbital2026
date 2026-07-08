@@ -144,12 +144,6 @@ function SUOptimiser() {
     const [userEmail] = useState(() => localStorage.getItem('userEmail') || '')
     const [modules, setModules] = useState([blankRow(), blankRow(), blankRow()])
 
-    // Auth guard
-    useEffect(() => {
-        const token = localStorage.getItem('token')
-        if (!token) navigate('/login')
-    }, [navigate])
-
     // Row helpers 
     const updateRow = (id, field, value) =>
         setModules(prev => prev.map(m => m.id === id ? { ...m, [field]: value } : m))
