@@ -1,5 +1,3 @@
-const GEMINI_KEY = process.env.GEMINI_KEY;
-
 const GENERATION_MODEL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash';
 
@@ -22,14 +20,16 @@ interface CandidateModule {
   description: string;
 }
 
-interface RerankedModule {
+export interface RerankedModule {
   code: string;
   score: number;
   rationale: string;
 }
 
 export async function rerankAndRationale(text: string, modulesJson: CandidateModule[], rerankPrompt = RERANK_PROMPT): Promise<RerankedModule[]> {
-    if (!GEMINI_KEY) {
+    const geminiKey = process.env.GEMINI_KEY;
+    
+    if (!geminiKey) {
         throw new Error('Missing GEMINI_KEY');
     }
 
@@ -56,7 +56,7 @@ export async function rerankAndRationale(text: string, modulesJson: CandidateMod
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-goog-api-key': GEMINI_KEY,
+                'x-goog-api-key': geminiKey,
             },
             body: JSON.stringify({systemInstruction: {parts: [{ text: rerankPrompt }],
         },

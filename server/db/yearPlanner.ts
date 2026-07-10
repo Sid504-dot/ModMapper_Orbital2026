@@ -1,12 +1,16 @@
 import supabase from './supabase';
-import { RuleBook, Group, ProgrammeType, YearPlan, YearPlanSems} from '../types/ruleBookYearPlanner';
+import { RuleBook, Group, YearPlan, YearPlanSems } from '../types/ruleBookYearPlanner';
 import { PrereqTree } from '../types/prereq';
+import { eligibleSuggestions } from '../domain/yearPlanner/eligibleSuggestions';
+import { rerankAndRationale, RerankedModule } from '../services/rerank';
+import { planInsights } from '../domain/yearPlanner/planInsights';
+import { PlanInsights } from '../types/planInsights';
 
-export async function getAllProgrammes () {
+export async function getAllProgrammes() {
     const { data, error } = await supabase
         .from('programmes')
         .select('*');
-    
+
     if (error) {
         throw new Error(`Error fetching programmes: ${error.message}`, { cause: error });
     }
@@ -14,27 +18,25 @@ export async function getAllProgrammes () {
     return data;
 }
 
-
 export async function upsertProgrammes(userID: string, programmesID: Array<number>) {
-    
+
     if (!userID || !programmesID) {
         throw new Error(`No content passed`);
     }
 
-    const insertRows = programmesID.map(x => ({user_id: userID , programme_id: x}));
-    
-    const { data, error } = await supabase
+    const insertRows = programmesID.map(x => ({ user_id: userID, programme_id: x }));
+
+    const { error } = await supabase
         .from('user_programmes')
-        .upsert(insertRows, {onConflict: 'user_id, programme_id'});
+        .upsert(insertRows, { onConflict: 'user_id, programme_id' });
 
     if (error) {
         throw new Error(`Error saving user programmes: ${error.message}`, { cause: error });
     }
-        
 }
 
 export async function deleteProgrammes(userID: string, programmeID: number) {
-    
+
     if (!userID || !programmeID) {
         throw new Error(`No content passed`);
     }
@@ -44,16 +46,15 @@ export async function deleteProgrammes(userID: string, programmeID: number) {
         .delete()
         .eq('user_id', userID)
         .eq('programme_id', programmeID);
-    
+
     if (error) {
         throw new Error(`Error deleting user programmes: ${error.message}`, { cause: error });
     }
-
 }
 
-export async function getRulebookForUser (userID: string) : Promise<RuleBook> {
+export async function getRulebookForUser(userID: string): Promise<RuleBook> {
     if (!userID) {
-        throw new Error(`No content passed`);
+        throw new Error('No content passed');
     }
 
     const { data: userProgrammes, error: programmeError } = await supabase
@@ -73,23 +74,10 @@ export async function getRulebookForUser (userID: string) : Promise<RuleBook> {
             prereqDAG: new Map<string, PrereqTree>(),
             groups: [],
             groupModules: new Map<number, string[]>(),
-            spanByCode: new Map<string, number>(),
-            programmeTypes: new Map<number, ProgrammeType>()
+            descriptions: new Map<string, string>(),
+            unitsByCode: new Map<string, number>()
         };
     }
-
-    const { data: programmes, error: programmeTypeError } = await supabase
-        .from('programmes')
-        .select('id, type')
-        .in('id', programmeIds);
-
-    if (programmeTypeError) {
-        throw new Error(`Error fetching programme types: ${programmeTypeError.message}`, { cause: programmeTypeError });
-    }
-
-    const programmeTypes = new Map<number, ProgrammeType>(
-        programmes.map(p => [p.id, p.type as ProgrammeType])
-    );
 
     const { data: groups, error: groupError } = await supabase
         .from('requirement_groups')
@@ -111,14 +99,14 @@ export async function getRulebookForUser (userID: string) : Promise<RuleBook> {
             prereqDAG: new Map<string, PrereqTree>(),
             groups: typedGroups,
             groupModules: new Map<number, string[]>(),
-            spanByCode: new Map<string, number>(),
-            programmeTypes
+            descriptions: new Map<string, string>(),
+            unitsByCode: new Map<string, number>()
         };
     }
 
     const { data: groupModuleRows, error: groupModuleError } = await supabase
         .from('requirement_group_modules')
-        .select('group_id, module_code, span_semesters')
+        .select('group_id, module_code')
         .in('group_id', groupIdArray);
 
     if (groupModuleError) {
@@ -126,7 +114,6 @@ export async function getRulebookForUser (userID: string) : Promise<RuleBook> {
     }
 
     const groupModules = new Map<number, string[]>();
-    const spanByCode = new Map<string, number>();
 
     for (const row of groupModuleRows) {
         if (!groupModules.has(row.group_id)) {
@@ -134,14 +121,10 @@ export async function getRulebookForUser (userID: string) : Promise<RuleBook> {
         }
 
         groupModules.get(row.group_id)!.push(row.module_code);
-
-        const span = row.span_semesters ?? 1;
-        const existing = spanByCode.get(row.module_code) ?? 1;
-        spanByCode.set(row.module_code, Math.max(existing, span));
     }
 
     const moduleCodes = [
-        ...new Set(groupModuleRows.map(m => m.module_code))
+        ...new Set(groupModuleRows.map(row => row.module_code))
     ];
 
     if (moduleCodes.length === 0) {
@@ -150,14 +133,14 @@ export async function getRulebookForUser (userID: string) : Promise<RuleBook> {
             prereqDAG: new Map<string, PrereqTree>(),
             groups: typedGroups,
             groupModules,
-            spanByCode,
-            programmeTypes
+            descriptions: new Map<string, string>(),
+            unitsByCode: new Map<string, number>()
         };
     }
 
     const { data: modules, error: moduleError } = await supabase
         .from('modules')
-        .select('module_code, prereq_tree')
+        .select('module_code, prereq_tree, description, module_credit')
         .in('module_code', moduleCodes);
 
     if (moduleError) {
@@ -165,9 +148,23 @@ export async function getRulebookForUser (userID: string) : Promise<RuleBook> {
     }
 
     const prereqDAG = new Map<string, PrereqTree>(
-        modules.map(m => [
-            m.module_code,
-            m.prereq_tree as PrereqTree
+        modules.map(module => [
+            module.module_code,
+            module.prereq_tree as PrereqTree
+        ])
+    );
+
+    const descriptions = new Map<string, string>(
+        modules.map(module => [
+            module.module_code,
+            module.description ?? ''
+        ])
+    );
+
+    const unitsByCode = new Map<string, number>(
+        modules.map(module => [
+            module.module_code,
+            module.module_credit ?? 4
         ])
     );
 
@@ -176,16 +173,15 @@ export async function getRulebookForUser (userID: string) : Promise<RuleBook> {
         prereqDAG,
         groups: typedGroups,
         groupModules,
-        spanByCode,
-        programmeTypes
+        descriptions,
+        unitsByCode
     };
 }
 
-
-export async function getPlan (userID: string) : Promise<YearPlan[]> {
+export async function getPlan(userID: string): Promise<YearPlan[]> {
     const { data, error } = await supabase
         .from('year_plan')
-        .select('module_code, sem_index, placed_for_group_id, pinned')
+        .select('module_code, sem_index, placed_for_group_id')
         .eq('user_id', userID);
 
     if (error) {
@@ -195,15 +191,14 @@ export async function getPlan (userID: string) : Promise<YearPlan[]> {
     return (data ?? []) as YearPlan[];
 }
 
-export async function placeModule(userID: string, moduleCode: string, semIndex: number, groupId: number | null) : Promise<boolean> {
+export async function placeModule(userID: string, moduleCode: string, semIndex: number, groupId: number | null): Promise<boolean> {
     const { error } = await supabase
         .from('year_plan')
         .upsert({
             user_id: userID,
             module_code: moduleCode,
             sem_index: semIndex,
-            placed_for_group_id: groupId,
-            pinned: true
+            placed_for_group_id: groupId
         }, { onConflict: 'user_id,module_code' });
 
     if (error) {
@@ -213,7 +208,7 @@ export async function placeModule(userID: string, moduleCode: string, semIndex: 
     return true;
 }
 
-export async function removeModule(userID: string, module_code: string) : Promise<boolean> {
+export async function removeModule(userID: string, module_code: string): Promise<boolean> {
     const { error } = await supabase
         .from('year_plan')
         .delete()
@@ -227,11 +222,11 @@ export async function removeModule(userID: string, module_code: string) : Promis
     return true;
 }
 
-export async function clearPlan(userID: string) : Promise<boolean> {
+export async function clearPlan(userID: string): Promise<boolean> {
     const { error } = await supabase
         .from('year_plan')
         .delete()
-        .eq('user_id', userID)
+        .eq('user_id', userID);
 
     if (error) {
         throw new Error(`Error clearing plan: ${error.message}`, { cause: error });
@@ -240,11 +235,11 @@ export async function clearPlan(userID: string) : Promise<boolean> {
     return true;
 }
 
-export async function getSemBudgets(userID: string) : Promise<YearPlanSems[]> {
+export async function getSemBudgets(userID: string): Promise<YearPlanSems[]> {
     const { data, error } = await supabase
         .from('year_plan_sems')
         .select('sem_index, max_units')
-        .eq('user_id', userID );
+        .eq('user_id', userID);
 
     if (error) {
         throw new Error(`Error fetching sem and max units for that user: ${error.message}`, { cause: error });
@@ -253,7 +248,7 @@ export async function getSemBudgets(userID: string) : Promise<YearPlanSems[]> {
     return (data ?? []) as YearPlanSems[];
 }
 
-export async function setSemUnits(userID: string, semIndex: number, maxUnits: number) : Promise<boolean> {
+export async function setSemUnits(userID: string, semIndex: number, maxUnits: number): Promise<boolean> {
     const { error } = await supabase
         .from('year_plan_sems')
         .upsert({
@@ -267,19 +262,117 @@ export async function setSemUnits(userID: string, semIndex: number, maxUnits: nu
     }
 
     return true;
-
 }
 
-export async function suggestForSlot(semIndex: number, plan: YearPlan, rulebook: RuleBook, semBudgets: number, interest: string) {
-    let count = 0;
 
-    for (const i of rulebook.spanByCode) {
-        if (i[1] >= semBudgets) {
-            count++;
-        }
+export async function suggestForSlot(
+    groupId: number,
+    semIndex: number,
+    plan: YearPlan[],
+    rulebook: RuleBook,
+    interest: string
+): Promise<{
+    required: string[];
+    ranked: RerankedModule[];
+    others: string[];
+}> {
+
+    const {
+        groupKind,
+        eligible
+    } = eligibleSuggestions(
+        groupId,
+        semIndex,
+        plan,
+        rulebook
+    );
+
+    if (groupKind === 'ALL_OF') {
+        return {
+            required: eligible,
+            ranked: [],
+            others: []
+        };
     }
 
-    if (count == 0) {
-        
+    if (interest.trim() === '') {
+        return {
+            required: [],
+            ranked: [],
+            others: eligible
+        };
     }
+
+    const candidates = eligible.map(code => ({
+        module_code: code,
+        description: rulebook.descriptions.get(code) ?? ''
+    }));
+
+    const ranked = await rerankAndRationale(
+        interest,
+        candidates
+    );
+
+    const rankedCodes = new Set(
+        ranked.map(r => r.code)
+    );
+
+    const others = eligible.filter(code =>
+        !rankedCodes.has(code)
+    );
+
+    return {
+        required: [],
+        ranked,
+        others
+    };
+}
+
+export async function getUserInterest(userID: string): Promise<string> {
+    if (!userID) {
+        throw new Error('No content passed');
+    }
+
+    const { data, error } = await supabase
+        .from('user_profile')
+        .select('interest')
+        .eq('user_id', userID)
+        .maybeSingle();
+
+    if (error) {
+        throw new Error(`Error fetching user interest: ${error.message}`, { cause: error });
+    }
+
+    return data?.interest ?? '';
+}
+
+export async function buildPlanView(userID: string): Promise<{
+    plan: Array<YearPlan & { orphaned: boolean }>;
+    budgets: YearPlanSems[];
+    insights: PlanInsights;
+}> {
+    const [plan, budgets, rulebook] = await Promise.all([
+        getPlan(userID),
+        getSemBudgets(userID),
+        getRulebookForUser(userID)
+    ]);
+
+    const planWithFlags = plan.map(row => ({
+        ...row,
+        orphaned:
+            row.placed_for_group_id !== null &&
+            !rulebook.liveGroupIds.has(row.placed_for_group_id)
+    }));
+
+    const insights = planInsights(
+        plan,
+        budgets,
+        rulebook
+    );
+
+    return {
+        plan: planWithFlags,
+        budgets,
+        insights
+    };
 }

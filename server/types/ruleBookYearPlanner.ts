@@ -1,8 +1,6 @@
-export type ProgrammeType = 'major' | 'second_major' | 'minor' | 'common';
+import { PrereqTree } from "./prereq";
 
 export type GroupKind = 'ALL_OF' | 'N_OF' | 'MC_FROM' | 'UE';
-
-import { PrereqTree } from "./prereq";
 
 export interface Group {
     id: number;
@@ -14,22 +12,27 @@ export interface Group {
 }
 
 export interface RuleBook {
+    descriptions: Map<string, string>;
     liveGroupIds: Set<number>;
     prereqDAG: Map<string, PrereqTree>;
     groups: Group[];
     groupModules: Map<number, string[]>;
-    spanByCode: Map<string, number>;
-    programmeTypes: Map<number, ProgrammeType>;
+    unitsByCode: Map<string, number>;
 }
 
 export interface YearPlan {
     module_code: string;
-    sem_index: number; 
+    sem_index: number;
     placed_for_group_id: number | null;
-    pinned: boolean;
 }
 
 export interface YearPlanSems {
     sem_index: number;
     max_units: number;
+}
+
+export interface RerankedModule {
+    code: string;
+    rationale: string;
+    score: number;
 }
