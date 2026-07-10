@@ -2,7 +2,6 @@ import express, { Request, Response } from 'express';
 const router = express.Router();
 import * as suPolicy from '../db/suPolicy';
 import * as timetableDB from '../db/timetable';
-import * as userSuInfoDB from '../db/userSuInfo';
 import * as moduleDB from '../db/modules';
 import * as userSemDB from '../db/userSem';
 import * as userProfileDB from '../db/userProfile';
@@ -28,7 +27,7 @@ router.get('/', async (req: Request, res: Response<ApiResponse>) => {
         const matricYear = Math.ceil(sem / 2) + sem % 2;
 
         const suPolicyData = await suPolicy.getSuPolicy(matricYear);
-        const userSuInfoData = await userSuInfoDB.getSuInfo(userID);
+        const userSuInfoData = await userProfileDB.getSuInfo(userID);
 
         const groupCap =
             matricYear <= 2 ? suPolicyData.y1y2_cap : suPolicyData.y3y4_cap;
@@ -36,7 +35,6 @@ router.get('/', async (req: Request, res: Response<ApiResponse>) => {
         const currentGroup = matricYear <= 2 ? 'y1y2' : 'y3y4';
 
         const usedSu = userSuInfoData?.used_su ?? 0;
-        const totalSu = userSuInfoData?.total_su ?? suPolicyData.total_su;
 
         const timetableData = await timetableDB.getTimetableByUserID(userID);
 
@@ -67,7 +65,6 @@ router.get('/', async (req: Request, res: Response<ApiResponse>) => {
                 groupCap,
                 currentGroup,
                 usedSu,
-                totalSu,
                 modules
             },
             error: null
@@ -85,82 +82,10 @@ router.get('/', async (req: Request, res: Response<ApiResponse>) => {
     }
 });
 
-router.post('/userProfile', async (req: Request, res: Response<ApiResponse>) => {
-    const userID = req.user.id;
 
-    try {
-        const { matricYear } = req.body;
 
-        if (!matricYear) {
-            return res.status(400).json({
-                success: false,
-                message: 'Matric year is required',
-                data: null,
-                error: 'Missing matricYear'
-            });
-        }
-
-        const userProfile =
-            await userProfileDB.upsertUserProfile(userID, matricYear);
-
-        return res.status(200).json({
-            success: true,
-            message: 'User profile updated successfully',
-            data: userProfile,
-            error: null
-        });
-
-    } catch (error) {
-        console.error('Error updating user profile:', error);
-
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to update user profile',
-            data: null,
-            error: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
-});
-
-router.post('/info', async (req: Request, res: Response<ApiResponse>) => {
-    const userID = req.user.id;
-
-    try {
-        const { totalSu, usedSU } = req.body;
-
-        if (totalSu === undefined || usedSU === undefined) {
-            return res.status(400).json({
-                success: false,
-                message: 'Total SU and Used SU are required',
-                data: null,
-                error: 'Missing fields'
-            });
-        }
-
-        const userSuInfo =
-            await userSuInfoDB.upsertSuInfo(userID, totalSu, usedSU);
-
-        return res.status(200).json({
-            success: true,
-            message: 'SU info updated successfully',
-            data: userSuInfo,
-            error: null
-        });
-
-    } catch (error) {
-        console.error('Error updating user SU info:', error);
-
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to update SU info',
-            data: null,
-            error: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
-});
 
 router.post('/eligible', async (req: Request, res: Response<ApiResponse>) => {
-    const userID = req.user.id;
 
     try {
         const userReqModules =
@@ -187,5 +112,8 @@ router.post('/eligible', async (req: Request, res: Response<ApiResponse>) => {
         });
     }
 });
+
+
+
 
 export default router;

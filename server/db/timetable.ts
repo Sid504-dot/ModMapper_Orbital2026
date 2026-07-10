@@ -27,6 +27,20 @@ export async function upsertTimetableEntry(entryData: { user_id: string; sem_num
     return data;
 }
 
+export async function upsertTimetableEntryWithSemNum(entryData: { user_id: string; sem_number: number }) {
+    if (entryData.sem_number == null) {
+        throw new Error('cannot upsert timetable entries: sem_number is null');
+    }
+    const { data, error } = await supabase.from('user_timetable')
+        .upsert(entryData, { onConflict: 'user_id,sem_number' })
+        .select();
+
+    if (error) {
+        throw new Error(`upsertTimetableEntry failed: ${error.message}`, { cause: error });
+    }
+    return data;
+}
+
 export async function getTimetableBySemNumber(semNumber: number, userID: string) {
     const { data, error } = await supabase.from('user_timetable').select().eq('sem_number', semNumber).eq('user_id', userID);
     if (error) {
