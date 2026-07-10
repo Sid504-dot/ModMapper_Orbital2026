@@ -1,7 +1,6 @@
 import supabase from './supabase';
 import { getTimetableBySemNumber } from './timetable';
 import { getUserSemByUserID } from './userSem';
-import { currentAcademicSemester } from '../domain/calendar/currentAcaSem';
 
 export async function needToUpdateSlotDemand(moduleCode: string) {
     const { data: existing, error } = await supabase
@@ -21,27 +20,27 @@ export async function needToUpdateSlotDemand(moduleCode: string) {
             .select('cached_at')
             .eq('module_code', moduleCode)
             .single();
-        
-        if(moduleCachedTimeStamp.error) {
-            throw new Error(`Error fetching timetable: ${moduleCachedTimeStamp.error.message}`);
+
+        if (moduleError) {
+            throw new Error(`Error fetching timetable: ${moduleError.message}`);
         }
 
-        if (slotDemandTimeStamp.data[0].computed_at < moduleCachedTimeStamp.data.cached_at) {
+        if (existing[0].computed_at < moduleData.cached_at) {
             needToUpdate = true;
         }
     }
 
     const month = new Date().getMonth() + 1;
-    const beforeMay =  month < 5;
+    const beforeMay = month < 5;
 
-    if (ifModuleExists.data.length === 0 || needToUpdate) {
+    if (existing.length === 0 || needToUpdate) {
         const academicYearData = await supabase
             .from('modules')
             .select('semesters')
             .eq('module_code', moduleCode)
             .single();
-        
-        if(academicYearData.error) {
+
+        if (academicYearData.error) {
             throw new Error(`Error fetching timetable: ${academicYearData.error.message}`);
         }
 
@@ -50,11 +49,10 @@ export async function needToUpdateSlotDemand(moduleCode: string) {
         if (beforeMay) {
             whichSem = 2;
         }
-        
+
         const semData = academicYearData.data.semesters.find((s: any) => s.semester === whichSem);
         await updateSlot(moduleCode, semData);
     }
-
 }
 
 export async function updateSlot(moduleCode: string, semData: any) {
