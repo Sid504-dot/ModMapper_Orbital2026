@@ -22,7 +22,7 @@ router.get('/', async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error fetching heat map data:', error);
         res.status(500).json({ error: 'Internal server error' });
-     }
+    }
 });
 
-export default Router
+export default router
