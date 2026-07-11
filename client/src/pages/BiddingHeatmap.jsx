@@ -169,7 +169,7 @@ function BiddingHeatmap() {
                 <div style={s.searchRow}>
                     <input
                         type="text"
-                        placeholder="Enter module code — e.g. CS3230"
+                        placeholder="Enter module code e.g. CS3230"
                         value={query}
                         onChange={e => { setQuery(e.target.value); setError('') }}
                         onKeyDown={e => e.key === 'Enter' && handleSearch()}
