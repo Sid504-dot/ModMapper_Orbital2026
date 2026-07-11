@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-
-const BACKEND = 'https://modmapper-orbital2026.onrender.com'
+import Sidebar from '../components/Sidebar'
+import { BACKEND } from '../constants'
 
 function JoinGroup() {
     const { inviteToken } = useParams()
     const navigate = useNavigate()
+    const [userEmail] = useState(() => localStorage.getItem('userEmail') || '')
     const [status, setStatus] = useState('joining') // 'joining', 'success', 'already', 'error'
-
-
 
     useEffect(() => {
         const token = localStorage.getItem('token')
@@ -39,7 +38,7 @@ function JoinGroup() {
 
     const page = {
         display: 'flex', minHeight: '100vh', background: '#fdf8f2',
-        alignItems: 'center', justifyContent: 'center',
+        alignItems: 'center', justifyContent: 'center', marginLeft: '220px',
     }
     const card = {
         background: '#f5edd8', border: '0.5px solid #d4c4a8', borderRadius: '12px',
@@ -53,49 +52,52 @@ function JoinGroup() {
     }
 
     return (
-        <div style={page}>
-            <div style={card}>
-                {status === 'joining' && (
-                    <>
-                        <div style={title}>Joining group...</div>
-                        <div style={sub}>Just a moment</div>
-                    </>
-                )}
-                {status === 'success' && (
-                    <>
-                        <div style={title}>Request sent!</div>
-                        <div style={sub}>
-                            You're now pending approval from the group owner.
-                            You'll be added once they approve your request.
-                        </div>
-                        <button style={btn} onClick={() => navigate('/group-finder')}>
-                            Go to Group Finder
-                        </button>
-                    </>
-                )}
-                {status === 'already' && (
-                    <>
-                        <div style={title}>Already a member</div>
-                        <div style={sub}>You're already in this group.</div>
-                        <button style={btn} onClick={() => navigate('/group-finder')}>
-                            Go to Group Finder
-                        </button>
-                    </>
-                )}
-                {status === 'error' && (
-                    <>
-                        <div style={title}>Something went wrong</div>
-                        <div style={sub}>
-                            The invite link may be invalid or expired.
-                            Ask the group owner to send a new one.
-                        </div>
-                        <button style={btn} onClick={() => navigate('/dashboard')}>
-                            Back to Dashboard
-                        </button>
-                    </>
-                )}
+        <>
+            <Sidebar active="group" userEmail={userEmail} />
+            <div style={page}>
+                <div style={card}>
+                    {status === 'joining' && (
+                        <>
+                            <div style={title}>Joining group...</div>
+                            <div style={sub}>Just a moment</div>
+                        </>
+                    )}
+                    {status === 'success' && (
+                        <>
+                            <div style={title}>Request sent!</div>
+                            <div style={sub}>
+                                You're now pending approval from the group owner.
+                                You'll be added once they approve your request.
+                            </div>
+                            <button style={btn} onClick={() => navigate('/group-finder')}>
+                                Go to Group Finder
+                            </button>
+                        </>
+                    )}
+                    {status === 'already' && (
+                        <>
+                            <div style={title}>Already a member</div>
+                            <div style={sub}>You're already in this group.</div>
+                            <button style={btn} onClick={() => navigate('/group-finder')}>
+                                Go to Group Finder
+                            </button>
+                        </>
+                    )}
+                    {status === 'error' && (
+                        <>
+                            <div style={title}>Something went wrong</div>
+                            <div style={sub}>
+                                The invite link may be invalid or expired.
+                                Ask the group owner to send a new one.
+                            </div>
+                            <button style={btn} onClick={() => navigate('/dashboard')}>
+                                Back to Dashboard
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
-        </div>
+        </>
     )
 }
 
