@@ -1,6 +1,7 @@
 import supabase from './supabase';
 import { getTimetableBySemNumber } from './timetable';
 import { getUserSemByUserID } from './userSem';
+import { currentAcademicSemester } from '../domain/calendar/currentAcaSem';
 
 export async function needToUpdateSlotDemand(moduleCode: string) {
     const { data: existing, error } = await supabase
@@ -30,9 +31,6 @@ export async function needToUpdateSlotDemand(moduleCode: string) {
         }
     }
 
-    const month = new Date().getMonth() + 1;
-    const beforeMay = month < 5;
-
     if (existing.length === 0 || needToUpdate) {
         const academicYearData = await supabase
             .from('modules')
@@ -44,12 +42,7 @@ export async function needToUpdateSlotDemand(moduleCode: string) {
             throw new Error(`Error fetching timetable: ${academicYearData.error.message}`);
         }
 
-        let whichSem = 1;
-
-        if (beforeMay) {
-            whichSem = 2;
-        }
-
+        const whichSem = currentAcademicSemester();
         const semData = academicYearData.data.semesters.find((s: any) => s.semester === whichSem);
 
         if (!semData) {
