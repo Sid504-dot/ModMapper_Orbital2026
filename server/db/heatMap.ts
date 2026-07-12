@@ -29,6 +29,35 @@ export async function needToUpdateSlotDemand(moduleCode: string) {
             needToUpdate = true;
         }
     }
+
+    const month = new Date().getMonth() + 1;
+    const beforeMay = month < 5;
+
+    if (existing.length === 0 || needToUpdate) {
+        const academicYearData = await supabase
+            .from('modules')
+            .select('semesters')
+            .eq('module_code', moduleCode)
+            .single();
+
+        if (academicYearData.error) {
+            throw new Error(`Error fetching timetable: ${academicYearData.error.message}`);
+        }
+
+        let whichSem = 1;
+
+        if (beforeMay) {
+            whichSem = 2;
+        }
+
+        const semData = academicYearData.data.semesters.find((s: any) => s.semester === whichSem);
+
+        if (!semData) {
+            throw new Error(`No timetable found for semester ${whichSem}`);
+        }
+
+        await updateSlot(moduleCode, semData);
+    }
 }
 
 export async function updateSlot(moduleCode: string, semData: any) {
