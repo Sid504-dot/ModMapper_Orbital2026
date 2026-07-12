@@ -251,11 +251,7 @@ export async function getSemBudgets(userID: string): Promise<YearPlanSems[]> {
 export async function setSemUnits(userID: string, semIndex: number, maxUnits: number): Promise<boolean> {
     const { error } = await supabase
         .from('year_plan_sems')
-        .upsert({
-            user_id: userID,
-            sem_index: semIndex,
-            max_units: maxUnits
-        }, { onConflict: 'user_id,sem_index' });
+        .upsert({user_id: userID, sem_index: semIndex, max_units: maxUnits}, { onConflict: 'user_id,sem_index' });
 
     if (error) {
         throw new Error(`Error placing module: ${error.message}`, { cause: error });
@@ -265,27 +261,10 @@ export async function setSemUnits(userID: string, semIndex: number, maxUnits: nu
 }
 
 
-export async function suggestForSlot(
-    groupId: number,
-    semIndex: number,
-    plan: YearPlan[],
-    rulebook: RuleBook,
-    interest: string
-): Promise<{
-    required: string[];
-    ranked: RerankedModule[];
-    others: string[];
-}> {
-
-    const {
-        groupKind,
-        eligible
-    } = eligibleSuggestions(
-        groupId,
-        semIndex,
-        plan,
-        rulebook
-    );
+export async function suggestForSlot(groupId: number, semIndex: number, plan: YearPlan[], rulebook: RuleBook, interest: string): 
+Promise<{required: string[]; ranked: RerankedModule[]; others: string[];}> {
+    
+    const { groupKind, eligible } = eligibleSuggestions( groupId, semIndex, plan, rulebook );
 
     if (groupKind === 'ALL_OF') {
         return {
@@ -303,23 +282,13 @@ export async function suggestForSlot(
         };
     }
 
-    const candidates = eligible.map(code => ({
-        module_code: code,
-        description: rulebook.descriptions.get(code) ?? ''
-    }));
+    const candidates = eligible.map(code => ({ module_code: code, description: rulebook.descriptions.get(code) ?? ''}));
 
-    const ranked = await rerankAndRationale(
-        interest,
-        candidates
-    );
+    const ranked = await rerankAndRationale(interest, candidates);
 
-    const rankedCodes = new Set(
-        ranked.map(r => r.code)
-    );
+    const rankedCodes = new Set(ranked.map(r => r.code));
 
-    const others = eligible.filter(code =>
-        !rankedCodes.has(code)
-    );
+    const others = eligible.filter(code => !rankedCodes.has(code));
 
     return {
         required: [],
@@ -346,7 +315,8 @@ export async function getUserInterest(userID: string): Promise<string> {
     return data?.interest ?? '';
 }
 
-export async function buildPlanView(userID: string): Promise<{
+export async function buildPlanView(userID: string): 
+Promise<{
     plan: Array<YearPlan & { orphaned: boolean }>;
     budgets: YearPlanSems[];
     insights: PlanInsights;
@@ -359,10 +329,7 @@ export async function buildPlanView(userID: string): Promise<{
 
     const planWithFlags = plan.map(row => ({
         ...row,
-        orphaned:
-            row.placed_for_group_id !== null &&
-            !rulebook.liveGroupIds.has(row.placed_for_group_id)
-    }));
+        orphaned: row.placed_for_group_id !== null && !rulebook.liveGroupIds.has(row.placed_for_group_id)}));
 
     const insights = planInsights(
         plan,

@@ -30,9 +30,7 @@ describe('Year Planner Suggest Route', () => {
             .mockResolvedValue('Artificial Intelligence');
 
         jest.spyOn(yearPlannerDB, 'getRulebookForUser')
-            .mockResolvedValue({
-                liveGroupIds: new Set([1])
-            } as any);
+            .mockResolvedValue({liveGroupIds: new Set([1])} as any);
 
         jest.spyOn(yearPlannerDB, 'getPlan')
             .mockResolvedValue([] as any);

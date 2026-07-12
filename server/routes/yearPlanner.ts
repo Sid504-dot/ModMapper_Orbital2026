@@ -99,12 +99,7 @@ router.post('/suggest', async (req: Request, res: Response<ApiResponse>) => {
     const userID = req.user.id;
     const { groupId, semIndex } = req.body;
 
-    if (
-        typeof groupId !== 'number' ||
-        typeof semIndex !== 'number' ||
-        semIndex < 1 ||
-        semIndex > 8
-    ) {
+    if (typeof groupId !== 'number' || typeof semIndex !== 'number' || semIndex < 1 || semIndex > 8) {
         return res.status(400).json({
             success: false,
             message: 'groupId must be a number and semIndex must be between 1 and 8.',
@@ -129,13 +124,7 @@ router.post('/suggest', async (req: Request, res: Response<ApiResponse>) => {
             });
         }
 
-        const result = await yearPlannerDB.suggestForSlot(
-            groupId,
-            semIndex,
-            plan,
-            rulebook,
-            interest
-        );
+        const result = await yearPlannerDB.suggestForSlot(groupId, semIndex, plan, rulebook, interest);
 
         return res.status(200).json({
             success: true,
@@ -186,10 +175,7 @@ router.post('/place', async (req: Request, res: Response<ApiResponse>) => {
     const userID = req.user.id;
     const { moduleCode, semIndex, groupId } = req.body;
 
-    if (
-        typeof moduleCode !== 'string' ||
-        moduleCode.trim() === ''
-    ) {
+    if (typeof moduleCode !== 'string' || moduleCode.trim() === '') {
         return res.status(400).json({
             success: false,
             message: 'moduleCode is required',
@@ -198,11 +184,7 @@ router.post('/place', async (req: Request, res: Response<ApiResponse>) => {
         });
     }
 
-    if (
-        typeof semIndex !== 'number' ||
-        semIndex < 1 ||
-        semIndex > 8
-    ) {
+    if (typeof semIndex !== 'number' || semIndex < 1 || semIndex > 8) {
         return res.status(400).json({
             success: false,
             message: 'semIndex must be between 1 and 8',
@@ -211,10 +193,7 @@ router.post('/place', async (req: Request, res: Response<ApiResponse>) => {
         });
     }
 
-    if (
-        groupId !== null &&
-        typeof groupId !== 'number'
-    ) {
+    if (groupId !== null && typeof groupId !== 'number') {
         return res.status(400).json({
             success: false,
             message: 'groupId must be a number or null',
@@ -293,13 +272,8 @@ router.post('/sem-units', async (req: Request, res: Response<ApiResponse>) => {
     const userID = req.user.id;
     const { semIndex, maxUnits } = req.body;
 
-    if (
-        typeof semIndex !== 'number' ||
-        semIndex < 1 ||
-        semIndex > 8 ||
-        typeof maxUnits !== 'number' ||
-        maxUnits <= 0
-    ) {
+    if (typeof semIndex !== 'number' || semIndex < 1 ||
+        semIndex > 8 || typeof maxUnits !== 'number' || maxUnits <= 0) {
         return res.status(400).json({
             success: false,
             message: 'semIndex must be between 1 and 8, and maxUnits must be a positive number',

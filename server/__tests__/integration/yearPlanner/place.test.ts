@@ -44,12 +44,7 @@ describe('Year Planner Place Route', () => {
 
         expect(res.status).toBe(200);
         expect(res.body.success).toBe(true);
-        expect(yearPlannerDB.placeModule).toHaveBeenCalledWith(
-            'user-1',
-            'CS2030',
-            2,
-            1
-        );
+        expect(yearPlannerDB.placeModule).toHaveBeenCalledWith('user-1', 'CS2030', 2, 1);
     });
 
     test('returns 400 for invalid moduleCode', async () => {
@@ -100,9 +95,7 @@ describe('Year Planner Place Route', () => {
             .mockResolvedValue(true);
 
         jest.spyOn(yearPlannerDB, 'buildPlanView')
-            .mockResolvedValue({
-                semesters: []
-            } as any);
+            .mockResolvedValue({semesters: []} as any);
 
         const res = await request(app)
             .post('/place')
@@ -115,12 +108,7 @@ describe('Year Planner Place Route', () => {
         expect(res.status).toBe(200);
         expect(res.body.success).toBe(true);
 
-        expect(yearPlannerDB.placeModule).toHaveBeenCalledWith(
-            'user-1',
-            'CS2030',
-            2,
-            null
-        );
+        expect(yearPlannerDB.placeModule).toHaveBeenCalledWith('user-1', 'CS2030', 2, null);
     });
 
     test('returns 500 when placement fails', async () => {

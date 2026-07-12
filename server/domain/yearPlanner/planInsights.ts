@@ -3,15 +3,9 @@ import { PlanInsights, MissingPrereq } from "../../types/planInsights";
 import { anyMissingPrereq } from "../prereq/anyMissingPrereq";
 import { getPrereqModules } from "../prereq/getPrereqModuleCodes";
 
-export function planInsights(
-    plan: YearPlan[],
-    budgets: YearPlanSems[],
-    rulebook: RuleBook
-): PlanInsights {
+export function planInsights(plan: YearPlan[], budgets: YearPlanSems[], rulebook: RuleBook): PlanInsights {
 
-    const placed = new Set<string>(
-        plan.map(p => p.module_code)
-    );
+    const placed = new Set<string>(plan.map(p => p.module_code));
 
     const semMap = new Map<number, string[]>();
 
@@ -23,11 +17,7 @@ export function planInsights(
         semMap.get(row.sem_index)!.push(row.module_code);
     }
 
-    const prereqHints: {
-        code: string;
-        sem: number;
-        missing: MissingPrereq;
-    }[] = [];
+    const prereqHints: {code: string; sem: number; missing: MissingPrereq}[] = [];
 
     for (const row of plan) {
 
@@ -53,11 +43,7 @@ export function planInsights(
         }
     }
 
-    const capHints: {
-        sem: number;
-        used: number;
-        cap: number | null;
-    }[] = [];
+    const capHints: {sem: number; used: number; cap: number | null}[] = [];
 
     for (const [sem, codes] of semMap) {
 
@@ -87,14 +73,7 @@ export function planInsights(
         }
     }
 
-    const groupProgress: {
-        groupId: number;
-        label: string;
-        kind: GroupKind;
-        placed: number;
-        required: number;
-        isUnitBased: boolean;
-    }[] = [];
+    const groupProgress: {groupId: number; label: string; kind: GroupKind; placed: number; required: number; isUnitBased: boolean}[] = [];
 
     for (const group of rulebook.groups) {
 
@@ -168,11 +147,7 @@ export function planInsights(
         }
     }
 
-    const stillToPlace: {
-        groupId: number;
-        label: string;
-        modules: string[];
-    }[] = [];
+    const stillToPlace: {groupId: number; label: string; modules: string[]}[] = [];
 
     for (const group of rulebook.groups) {
 

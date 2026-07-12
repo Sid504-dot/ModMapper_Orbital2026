@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import Sidebar from '../components/Sidebar'
 
 // Grade to grade point mapping (NUS grading scheme)
 const GRADE_POINTS = {
@@ -47,27 +47,6 @@ const blankRow = () => ({ id: uid(), code: '', grade: 'B+', mcs: 4, isSU: false,
 // Shared styles - same token system as Dashboard
 const s = {
     page: { display: 'flex', minHeight: '100vh', background: '#fdf8f2' },
-
-    // Sidebar — identical to Dashboard
-    sidebar: { width: '220px', background: '#1a2744', minHeight: '100vh', padding: '28px 20px', display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, height: '100%' },
-    logoRow: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '36px' },
-    logoIcon: { width: '34px', height: '34px', background: '#b85c38', borderRadius: '8px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px', padding: '7px' },
-    sq1: { borderRadius: '2px', background: 'rgba(255,255,255,0.95)' },
-    sq2: { borderRadius: '2px', background: 'rgba(255,255,255,0.72)' },
-    sq3: { borderRadius: '2px', background: 'rgba(255,255,255,0.55)' },
-    sq4: { borderRadius: '2px', background: 'rgba(255,255,255,0.38)' },
-    wordmark: { fontSize: '17px', fontWeight: '600', color: '#fdf8f2', letterSpacing: '-0.04em' },
-    navLabel: { fontSize: '10px', fontFamily: "'JetBrains Mono', monospace", fontWeight: '600', letterSpacing: '0.07em', textTransform: 'uppercase', color: 'rgba(253,248,242,0.35)', marginBottom: '6px', padding: '0 8px', marginTop: '20px' },
-    navItem: { display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '6px', marginBottom: '2px', fontSize: '13px', color: 'rgba(253,248,242,0.65)', cursor: 'pointer' },
-    navItemActive: { display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '6px', marginBottom: '2px', fontSize: '13px', color: '#fdf8f2', fontWeight: '500', cursor: 'pointer', background: 'rgba(184,92,56,0.25)' },
-    navDot: { width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(253,248,242,0.3)', flexShrink: 0 },
-    navDotActive: { width: '6px', height: '6px', borderRadius: '50%', background: '#b85c38', flexShrink: 0 },
-    sidebarBottom: { marginTop: 'auto' },
-    userPill: { display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '8px', background: 'rgba(253,248,242,0.06)' },
-    avatar: { width: '30px', height: '30px', borderRadius: '50%', background: '#b85c38', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '600', color: 'white', flexShrink: 0 },
-    userName: { fontSize: '12px', fontWeight: '500', color: '#fdf8f2' },
-    userEmail: { fontSize: '10px', color: 'rgba(253,248,242,0.4)', fontFamily: "'JetBrains Mono', monospace" },
-    logoutBtn: { background: 'none', border: 'none', color: 'rgba(253,248,242,0.4)', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', marginTop: '8px', padding: '0 10px', textAlign: 'left' },
 
     // Main content area
     main: { marginLeft: '220px', flex: 1, padding: '36px 40px' },
@@ -140,17 +119,10 @@ const s = {
 }
 
 function SUOptimiser() {
-    const navigate = useNavigate()
     const [userEmail] = useState(() => localStorage.getItem('userEmail') || '')
     const [modules, setModules] = useState([blankRow(), blankRow(), blankRow()])
 
-    // Auth guard
-    useEffect(() => {
-        const token = localStorage.getItem('token')
-        if (!token) navigate('/login')
-    }, [navigate])
-
-    // Row helpers 
+    // Row helpers
     const updateRow = (id, field, value) =>
         setModules(prev => prev.map(m => m.id === id ? { ...m, [field]: value } : m))
 
@@ -165,11 +137,6 @@ function SUOptimiser() {
 
     const handleReset = () => setModules([blankRow(), blankRow(), blankRow()])
 
-    const handleLogout = () => {
-        localStorage.removeItem('token')
-        navigate('/login')
-    }
-
     // Derived values
     // Current GPA pretends nothing is S/U'd - shows your "true" unmodified GPA
     const currentGPA = calcGPA(modules.map(m => ({ ...m, isSU: false })))
@@ -178,8 +145,6 @@ function SUOptimiser() {
     const gpaDelta = currentGPA !== null && projectedGPA !== null ? projectedGPA - currentGPA : null
     const suMCs = modules.filter(m => m.isSU).reduce((sum, m) => sum + (m.mcs || 0), 0)
     const recommendations = getRecommendations(modules)
-
-    const initials = userEmail ? userEmail.slice(0, 2).toUpperCase() : 'MM'
 
     // Which stat card style to use for GPA Change
     const deltaCardStyle = gpaDelta === null || gpaDelta === 0 ? s.statCard
@@ -195,42 +160,7 @@ function SUOptimiser() {
     return (
         <div style={s.page}>
 
-            {/* Sidebar - S/U Optimiser marked active */}
-            <div style={s.sidebar}>
-                <div style={s.logoRow}>
-                    <div style={s.logoIcon}>
-                        <div style={s.sq1} /><div style={s.sq2} />
-                        <div style={s.sq3} /><div style={s.sq4} />
-                    </div>
-                    <span style={s.wordmark}>ModMapper</span>
-                </div>
-
-                <div style={s.navLabel}>Plan</div>
-                <div style={s.navItem} onClick={() => navigate('/dashboard')}><div style={s.navDot} />Dashboard</div>
-                <div style={s.navItem} onClick={() => navigate('/timetable')}><div style={s.navDot} />Timetable</div>
-                <div style={s.navItem}><div style={s.navDot} />4-Year Planner</div>
-
-                <div style={s.navLabel}>Explore</div>
-                <div style={s.navItem} onClick={() => navigate('/modules')}><div style={s.navDot} />Module Search</div>
-                <div style={s.navItem}><div style={s.navDot} />UE Recommender</div>
-                <div style={s.navItem} onClick={() => navigate('/qna-hub')}><div style={s.navDot} />Q&amp;A Community</div>
-
-                <div style={s.navLabel}>Tools</div>
-                <div style={s.navItemActive}><div style={s.navDotActive} />S/U Optimiser</div>
-                <div style={s.navItem} onClick={() => navigate('/group-finder')}><div style={s.navDot} />Group Finder</div>
-                <div style={s.navItem} onClick={() => navigate('/bidding-heatmap')}><div style={s.navDot}></div>Bidding Heatmap</div>
-
-                <div style={s.sidebarBottom}>
-                    <div style={s.userPill}>
-                        <div style={s.avatar}>{initials}</div>
-                        <div>
-                            <div style={s.userName}>My Account</div>
-                            <div style={s.userEmail}>{userEmail || 'NUS Student'}</div>
-                        </div>
-                    </div>
-                    <button style={s.logoutBtn} onClick={handleLogout}>Sign out</button>
-                </div>
-            </div>
+            <Sidebar active="su" userEmail={userEmail} />
 
             {/* Main content */}
             <div style={s.main}>

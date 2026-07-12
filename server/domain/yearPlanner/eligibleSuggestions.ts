@@ -1,12 +1,8 @@
 import { RuleBook, YearPlan, GroupKind } from "../../types/ruleBookYearPlanner";
 import { isEligible } from "./eligibiltyCheck";
 
-export function eligibleSuggestions(
-    groupId: number,
-    semIndex: number,
-    plan: YearPlan[],
-    rulebook: RuleBook
-): {
+export function eligibleSuggestions(groupId: number, semIndex: number, plan: YearPlan[], rulebook: RuleBook): 
+{
     groupKind: GroupKind | undefined;
     eligible: string[];
 } {
@@ -17,14 +13,9 @@ export function eligibleSuggestions(
         .filter(p => p.sem_index < semIndex)
         .map(p => p.module_code);
 
-    const placed = new Set(
-        plan.map(p => p.module_code)
-    );
+    const placed = new Set(plan.map(p => p.module_code));
 
-    const eligible = pool.filter(code =>
-        !placed.has(code) &&
-        isEligible(code, rulebook.prereqDAG, taken)
-    );
+    const eligible = pool.filter(code => !placed.has(code) && isEligible(code, rulebook.prereqDAG, taken));
 
     const groupKind = rulebook.groups.find(g => g.id === groupId)?.kind;
 
