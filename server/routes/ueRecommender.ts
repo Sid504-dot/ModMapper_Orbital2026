@@ -40,7 +40,7 @@ router.post('/user-ue-prompt', async (req: Request, res: Response<ApiResponse>) 
         const queryVec = await embeddingServer.embed(expandedUserInput, 'RETRIEVAL_QUERY');
 
         const { data, error } = await supabase.rpc('match_modules', {
-            query_embedding: JSON.stringify(queryVec),
+            query_embedding: queryVec,
             taken_codes: takenModules,
             match_count: 30,
         });
