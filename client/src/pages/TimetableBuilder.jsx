@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
 import { BACKEND, DAYS, DAY_LABELS, MODULE_COLOURS, NUSMODS_MODULE_LIST_URL, NUSMODS_MODULE_URL } from '../constants'
+import { parseApi } from '../utils/api'
 
 const PX_PER_MIN = 1.6
 const START_HOUR = 8
@@ -93,12 +94,11 @@ function TimetableBuilder() {
                 const res = await fetch(`${BACKEND}/timetable`, {
                     headers: { Authorization: `Bearer ${token}` },
                 })
-                if (res.status === 500 || res.status === 404) return
-                if (!res.ok) throw new Error(`Unexpected status ${res.status}`)
-                const data = await res.json()
+                const result = await parseApi(res)
                 if (cancelled) return
+                if (!result.ok) return
 
-                const row = Array.isArray(data) ? data[0] : data
+                const row = Array.isArray(result.data) ? result.data[0] : result.data
                 if (!row || !Array.isArray(row.timetable_data)) return
 
                 const flatLessons = row.timetable_data
@@ -161,7 +161,8 @@ function TimetableBuilder() {
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ timetable_data }),
             })
-            setSaveStatus(res.ok ? 'saved' : 'error')
+            const result = await parseApi(res)
+            setSaveStatus(result.ok ? 'saved' : 'error')
         } catch {
             setSaveStatus('error')
         }
