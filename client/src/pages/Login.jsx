@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { BACKEND } from '../constants'
+import { parseApi } from '../utils/api'
 
 const s = {
     page: { display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: '100vh' },
@@ -71,23 +73,24 @@ function Login() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        const response = await fetch('https://modmapper-orbital2026.onrender.com/auth/login', {
+        const res = await fetch(`${BACKEND}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         })
-        const data = await response.json()
-        if (response.ok) {
-            localStorage.setItem('token', data.token)
-            navigate('/dashboard')
-        } else {
-            setMessage(data.error)
+        const result = await parseApi(res)
+        if (!result.ok) {
+            setMessage(result.error)
+            return
         }
+        localStorage.setItem('token', result.data)
+        localStorage.setItem('userEmail', email)
+        navigate('/dashboard')
     }
 
     const handleForgotPassword = async (e) => {
         e.preventDefault()
-        const response = await fetch('https://modmapper-orbital2026.onrender.com/auth/forgot-password', {
+        const response = await fetch(`${BACKEND}/auth/forgot-password`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })

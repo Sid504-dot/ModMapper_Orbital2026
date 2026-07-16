@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
 import { BACKEND } from '../constants'
+import { parseApi } from '../utils/api'
 
 // Hourly slots 0800-2100, matching Siddharth's response keys exactly
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
@@ -94,9 +95,8 @@ function GroupFinder() {
     const fetchMyGroups = async () => {
         try {
             const res = await fetch(`${BACKEND}/api/my-groups`, { headers: authHeaders() })
-            if (!res.ok) return
-            const data = await res.json()
-            setGroups(data) // data = [{ group_id, name, owner_id }, ...]
+            const result = await parseApi(res)
+            if (result.ok) setGroups(result.data ?? [])
         } catch (err) {
             console.error('Failed to fetch groups:', err)
         }
@@ -114,9 +114,9 @@ function GroupFinder() {
                         Authorization: `Bearer ${localStorage.getItem('token')}`,
                     },
                 })
-                if (!res.ok || !active) return
-                const data = await res.json()
-                if (active) setGroups(data)
+                const result = await parseApi(res)
+                if (!active) return
+                if (result.ok) setGroups(result.data ?? [])
             } catch (err) {
                 console.error('Failed to fetch groups:', err)
             }
@@ -162,9 +162,8 @@ function GroupFinder() {
             const res = await fetch(`${BACKEND}/api/group-free-finder/${group.group_id}`, {
                 headers: authHeaders()
             })
-            if (!res.ok) return
-            const data = await res.json()
-            setFreeSlots(data)
+            const result = await parseApi(res)
+            if (result.ok) setFreeSlots(result.data)
         } catch (err) {
             console.error('Failed to fetch free slots:', err)
         } finally {
@@ -185,7 +184,9 @@ function GroupFinder() {
                 alert('Only the group owner can share the invite link')
                 return
             }
-            const { inviteToken } = await res.json()
+            const result = await parseApi(res)
+            if (!result.ok) return
+            const { inviteToken } = result.data
             const link = `${window.location.origin}/group-finder/join/${inviteToken}`
             await navigator.clipboard.writeText(link)
             setInviteCopied(true)

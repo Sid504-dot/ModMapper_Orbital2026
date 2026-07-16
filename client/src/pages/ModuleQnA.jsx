@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import { BACKEND } from '../constants'
+import { parseApi } from '../utils/api'
 
 const s = {
     page: { display: 'flex', minHeight: '100vh', background: '#fdf8f2' },
@@ -121,19 +122,20 @@ function ModuleQnA() {
                 const eligRes = await fetch(`${BACKEND}/qnahub`, {
                     headers: { Authorization: `Bearer ${token}` }
                 })
+                const eligResult = await parseApi(eligRes)
                 if (cancelled) return
-                if (eligRes.ok) {
-                    const eligData = await eligRes.json()
-                    setCanAnswer(Array.isArray(eligData) && eligData.includes(moduleCode))
+                if (eligResult.ok) {
+                    setCanAnswer(Array.isArray(eligResult.data) && eligResult.data.includes(moduleCode))
                 }
 
                 // Posts for this module — visible to everyone regardless of eligibility
                 const postsRes = await fetch(`${BACKEND}/qnahub/${moduleCode}/posts`, {
                     headers: { Authorization: `Bearer ${token}` }
                 })
+                const postsResult = await parseApi(postsRes)
                 if (cancelled) return
-                if (postsRes.ok) {
-                    setPosts(await postsRes.json())
+                if (postsResult.ok) {
+                    setPosts(postsResult.data ?? [])
                 }
             } catch (err) {
                 if (!cancelled) setFetchError('Could not load Q&A — check your connection and refresh.')
@@ -152,7 +154,8 @@ function ModuleQnA() {
             const res = await fetch(`${BACKEND}/qnahub/${moduleCode}/posts`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             })
-            if (res.ok) setPosts(await res.json())
+            const result = await parseApi(res)
+            if (result.ok) setPosts(result.data ?? [])
         } catch (err) {
             console.error('Failed to refetch posts:', err)
         }
@@ -209,7 +212,7 @@ function ModuleQnA() {
     return (
         <div style={s.page}>
 
-            <Sidebar active="qna-hub" userEmail={userEmail} />
+            <Sidebar active="qna" userEmail={userEmail} />
 
             <div style={s.main}>
                 <button style={s.backLink} onClick={() => navigate('/qna-hub')}>

@@ -17,7 +17,7 @@ const NAV_SECTIONS = [
         label: 'Explore',
         items: [
             { key: 'modules', label: 'Module Search', path: '/modules' },
-            { key: 'ue', label: 'UE Recommender', path: null },
+            { key: 'ue', label: 'UE Recommender', path: '/ue-recommender' },
             { key: 'qna', label: 'Q\u0026A Community', path: '/qna-hub' },
         ],
     },

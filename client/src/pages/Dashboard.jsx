@@ -66,7 +66,7 @@ function Dashboard() {
         setSavingMatric(true)
         setMatricError('')
         try {
-            const res = await fetch(`${BACKEND}/su/userProfile`, {
+            const res = await fetch(`${BACKEND}/profile/userProfile`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
