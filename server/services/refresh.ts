@@ -8,10 +8,10 @@ async function processEachModule(module: any, existingMap: Map<string, any>) {
     const title = module.title;
     const fullData = await nusmods.moduleGetData(module.moduleCode);
     const semesterData = fullData.semesterData;
-    const description = module.description;        
-    const prereqTree = module.prereqTree;          
-    const preclusion = module.preclusion;          
-    const fulReq = module.fulfillRequirements;     
+    const description = fullData.description;
+    const prereqTree = fullData.prereqTree;
+    const preclusion = fullData.preclusion;
+    const fulReq = fullData.fulfillRequirements;
     const cachedAt = new Date().toISOString();
 
     if (existingModule) {

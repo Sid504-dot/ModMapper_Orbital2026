@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { BACKEND } from '../constants'
 
 const s = {
     page: { minHeight: '100vh', background: '#fdf8f2', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px' },
@@ -34,7 +35,7 @@ function Register() {
             setMessage('Passwords do not match')
             return
         }
-        const response = await fetch('https://modmapper-orbital2026.onrender.com/auth/register', {
+        const response = await fetch(`${BACKEND}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })

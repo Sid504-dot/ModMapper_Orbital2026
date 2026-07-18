@@ -1,10 +1,8 @@
 const GEMINI_KEY = process.env.GEMINI_KEY;
 
-const EMBEDDING_MODEL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001';
+const EMBEDDING_MODEL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001';
 
-const GENERATION_MODEL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash'; 
+const GENERATION_MODEL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash'; 
 
 const EXPANSION_PROMPT = `
 You are helping retrieve relevant NUS modules.
@@ -73,9 +71,7 @@ export async function embed(text: string, taskType: string) {
 
   if (!res.ok) {
     throw new Error(
-      `Gemini embedding failed: ${
-        data.error?.message ?? 'Unknown error'
-      }`
+      `Gemini embedding failed: ${ data.error?.message ?? 'Unknown error'}`
     );
   }
 

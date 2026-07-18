@@ -1,84 +1,144 @@
 import express, { Request, Response } from 'express';
 const router = express.Router();
-import supabase from '../db/supabase';
 import * as prereqTreeDB from '../db/prereqTree';
 import * as qnaEligibilityDB from '../db/qnaEligibilty';
 import { requireAuth } from '../middleware/requireAuth';
 router.use(requireAuth);
+import { ApiResponse } from '../types/apiResponse';
 
-
-router.get('/prereq-tree', async (req: Request, res: Response) => {
+router.get('/prereq-tree', async (req: Request, res: Response<ApiResponse>) => {
     const userID = req.user.id;
-    
+
     try {
         const ans = await prereqTreeDB.UserPrereqTree(userID);
-        return res.json(ans);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Prerequisite tree fetched successfully',
+            data: ans,
+            error: null
+        });
+
     } catch (error) {
         console.error('Error fetching data in prereq-tree', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
 
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to fetch prerequisite tree',
+            data: null,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
 });
 
-
-router.post('/refresh-prereq-tree', async (req: Request, res: Response) => {
+router.post('/refresh-prereq-tree', async (req: Request, res: Response<ApiResponse>) => {
     const userID = req.user.id;
 
     try {
         const takenModules = await qnaEligibilityDB.getEligibleModules(userID);
+
         await prereqTreeDB.updatePlanModules(takenModules, userID, 'taken');
-        res.status(200).json('Success');
+
+        return res.status(200).json({
+            success: true,
+            message: 'Prerequisite tree refreshed successfully',
+            data: null,
+            error: null
+        });
+
     } catch (error) {
         console.error('Error fetching data in refresh-prereq-tree', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
 
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to refresh prerequisite tree',
+            data: null,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
 });
 
-router.post('/add-module-tree', async (req: Request, res: Response) => {
+router.post('/add-module-tree', async (req: Request, res: Response<ApiResponse>) => {
     const userID = req.user.id;
     const moduleCode = req.body.module_code;
 
     try {
-        const m = await prereqTreeDB.fulfilledPreclusionsSoCantTakeMod(userID, moduleCode);
-        if (m) {
-            return res.json({success: false,
-                preclusion: m
-            })
+        const preclusion = await prereqTreeDB.fulfilledPreclusionsSoCantTakeMod(userID, moduleCode);
+
+        if (preclusion) {
+            return res.status(400).json({
+                success: false,
+                message: 'Module cannot be added due to preclusion',
+                data: null,
+                error: preclusion
+            });
         }
+
         const need = await prereqTreeDB.missingPrereq(userID, moduleCode);
 
-        if (need.length === 0){
-            await prereqTreeDB.updatePlanModules([moduleCode],userID,'planned');
-            return res.json({success: true})
-        } else {
-            return res.json({success: false,
-                prereq: need
-            })
+        if (need.length === 0) {
+            await prereqTreeDB.updatePlanModules([moduleCode], userID, 'planned');
+
+            return res.status(200).json({
+                success: true,
+                message: 'Module added to plan successfully',
+                data: null,
+                error: null
+            });
         }
+
+        return res.status(400).json({
+            success: false,
+            message: 'Missing prerequisites',
+            data: need,
+            error: 'Prerequisites not satisfied'
+        });
+
     } catch (error) {
         console.error('Error fetching data', error);
-        res.status(500).json({ error: 'Internal server error' });
+
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to add module to tree',
+            data: null,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
     }
 });
 
-router.post('/delete-planned-module', async (req: Request, res: Response) => {
+router.post('/delete-planned-module', async (req: Request, res: Response<ApiResponse>) => {
     const userID = req.user.id;
     const moduleCode = req.body.module_code;
 
     try {
         if (await prereqTreeDB.isModulePlanned(userID, moduleCode)) {
             await prereqTreeDB.deletePlannedModule(userID, moduleCode);
-            return res.json('Module Successfully Deleted');
+
+            return res.status(200).json({
+                success: true,
+                message: 'Module successfully deleted from plan',
+                data: null,
+                error: null
+            });
         }
 
-        return res.json('Module already taken, cannot be deleted');
+        return res.status(400).json({
+            success: false,
+            message: 'Module cannot be deleted',
+            data: null,
+            error: 'Module is already taken or not planned'
+        });
+
     } catch (error) {
         console.error('Error fetching data in prereq-tree', error);
-        res.status(500).json({ error: 'Internal server error' });
+
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to delete module',
+            data: null,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
     }
-
 });
-
 
 export default router;
