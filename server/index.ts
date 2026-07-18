@@ -13,6 +13,8 @@ import groupFreeFinderRouter from './routes/groupFreeFinder';
 import prereqTreeRouter from './routes/prereqTree';
 import ueReccomenderRouter from './routes/ueRecommender';
 import qnaHubRouter from './routes/qnaHub';
+import yearPlannerRouter from './routes/yearPlanner';
+import userProfileRouter from './routes/userProfile';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +31,8 @@ app.use('/api', groupFreeFinderRouter);
 app.use('/prereqTree', prereqTreeRouter);
 app.use('/ueReccomender', ueReccomenderRouter);
 app.use('/qnahub',qnaHubRouter)
+app.use('/planner', yearPlannerRouter);
+app.use('/profile', userProfileRouter);
 
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok' });

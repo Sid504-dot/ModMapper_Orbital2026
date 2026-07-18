@@ -1,7 +1,7 @@
 import { ParsedConstraints } from '../../types/timetableGenerator';
 import { constraintdefaults } from '../../types/timetableGenerator';
 
-export interface ValidationResult {
+interface ValidationResult {
     constraints: ParsedConstraints;
     valid: boolean;
     issues: string[]

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-
-const BACKEND = 'https://modmapper-orbital2026.onrender.com'
+import Sidebar from '../components/Sidebar'
+import { BACKEND } from '../constants'
+import { parseApi } from '../utils/api'
 
 // Hourly slots 0800-2100, matching Siddharth's response keys exactly
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
@@ -31,25 +31,6 @@ function formatSlot(slot) {
 
 const s = {
     page: { display: 'flex', minHeight: '100vh', background: '#fdf8f2' },
-    sidebar: { width: '220px', background: '#1a2744', minHeight: '100vh', padding: '28px 20px', display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, height: '100%' },
-    logoRow: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '36px' },
-    logoIcon: { width: '34px', height: '34px', background: '#b85c38', borderRadius: '8px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px', padding: '7px' },
-    sq1: { borderRadius: '2px', background: 'rgba(255,255,255,0.95)' },
-    sq2: { borderRadius: '2px', background: 'rgba(255,255,255,0.72)' },
-    sq3: { borderRadius: '2px', background: 'rgba(255,255,255,0.55)' },
-    sq4: { borderRadius: '2px', background: 'rgba(255,255,255,0.38)' },
-    wordmark: { fontSize: '17px', fontWeight: '600', color: '#fdf8f2', letterSpacing: '-0.04em' },
-    navLabel: { fontSize: '10px', fontFamily: "'JetBrains Mono', monospace", fontWeight: '600', letterSpacing: '0.07em', textTransform: 'uppercase', color: 'rgba(253,248,242,0.35)', marginBottom: '6px', padding: '0 8px', marginTop: '20px' },
-    navItem: { display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '6px', marginBottom: '2px', fontSize: '13px', color: 'rgba(253,248,242,0.65)', cursor: 'pointer' },
-    navItemActive: { display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '6px', marginBottom: '2px', fontSize: '13px', color: '#fdf8f2', fontWeight: '500', cursor: 'pointer', background: 'rgba(184,92,56,0.25)' },
-    navDot: { width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(253,248,242,0.3)', flexShrink: 0 },
-    navDotActive: { width: '6px', height: '6px', borderRadius: '50%', background: '#b85c38', flexShrink: 0 },
-    sidebarBottom: { marginTop: 'auto' },
-    userPill: { display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '8px', background: 'rgba(253,248,242,0.06)' },
-    avatar: { width: '30px', height: '30px', borderRadius: '50%', background: '#b85c38', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '600', color: 'white', flexShrink: 0 },
-    userName: { fontSize: '12px', fontWeight: '500', color: '#fdf8f2' },
-    userEmail: { fontSize: '10px', color: 'rgba(253,248,242,0.4)', fontFamily: "'JetBrains Mono', monospace" },
-    logoutBtn: { background: 'none', border: 'none', color: 'rgba(253,248,242,0.4)', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', marginTop: '8px', padding: '0 10px', textAlign: 'left' },
     main: { marginLeft: '220px', flex: 1, display: 'flex', minHeight: '100vh' },
 
     // Left panel — create group + groups list
@@ -90,7 +71,6 @@ const s = {
 }
 
 function GroupFinder() {
-    const navigate = useNavigate()
     const [userEmail] = useState(() => localStorage.getItem('userEmail') || '')
 
     // All the state this page would need — groups, selected group, members, free slots, form inputs, loading states, etc
@@ -102,8 +82,6 @@ function GroupFinder() {
     const [creating, setCreating] = useState(false)
     const [inviteCopied, setInviteCopied] = useState(false)
     const [loadingSlots, setLoadingSlots] = useState(false)
-
-
 
     // Helper that returns headers for every authenticated request
     // Bearer token tells the backend who the user is
@@ -117,17 +95,14 @@ function GroupFinder() {
     const fetchMyGroups = async () => {
         try {
             const res = await fetch(`${BACKEND}/api/my-groups`, { headers: authHeaders() })
-            if (!res.ok) return
-            const data = await res.json()
-            setGroups(data) // data = [{ group_id, name, owner_id }, ...]
+            const result = await parseApi(res)
+            if (result.ok) setGroups(result.data ?? [])
         } catch (err) {
             console.error('Failed to fetch groups:', err)
         }
-
-
     }
 
-    // Fetch groups on mount — useEffect because it's async and has a side effect (network request  and state update)
+    // Fetch groups on mount — useEffect because it's async and has a side effect (network request and state update)
     // Empty dependency array [] means it runs once when the component first mounts
     useEffect(() => {
         let active = true
@@ -139,9 +114,9 @@ function GroupFinder() {
                         Authorization: `Bearer ${localStorage.getItem('token')}`,
                     },
                 })
-                if (!res.ok || !active) return
-                const data = await res.json()
-                if (active) setGroups(data)
+                const result = await parseApi(res)
+                if (!active) return
+                if (result.ok) setGroups(result.data ?? [])
             } catch (err) {
                 console.error('Failed to fetch groups:', err)
             }
@@ -187,9 +162,8 @@ function GroupFinder() {
             const res = await fetch(`${BACKEND}/api/group-free-finder/${group.group_id}`, {
                 headers: authHeaders()
             })
-            if (!res.ok) return
-            const data = await res.json()
-            setFreeSlots(data)
+            const result = await parseApi(res)
+            if (result.ok) setFreeSlots(result.data)
         } catch (err) {
             console.error('Failed to fetch free slots:', err)
         } finally {
@@ -210,7 +184,9 @@ function GroupFinder() {
                 alert('Only the group owner can share the invite link')
                 return
             }
-            const { inviteToken } = await res.json()
+            const result = await parseApi(res)
+            if (!result.ok) return
+            const { inviteToken } = result.data
             const link = `${window.location.origin}/group-finder/join/${inviteToken}`
             await navigator.clipboard.writeText(link)
             setInviteCopied(true)
@@ -266,49 +242,10 @@ function GroupFinder() {
     // We derive it from the groups data — members with status active
     const totalActiveMembers = members.filter(m => m.status === 'active').length || 1
 
-    const initials = userEmail ? userEmail.slice(0, 2).toUpperCase() : 'MM'
-
     return (
         <div style={s.page}>
 
-            {/* Sidebar — Group Finder marked active */}
-            <div style={s.sidebar}>
-                <div style={s.logoRow}>
-                    <div style={s.logoIcon}>
-                        <div style={s.sq1} /><div style={s.sq2} />
-                        <div style={s.sq3} /><div style={s.sq4} />
-                    </div>
-                    <span style={s.wordmark}>ModMapper</span>
-                </div>
-
-                <div style={s.navLabel}>Plan</div>
-                <div style={s.navItem} onClick={() => navigate('/dashboard')}><div style={s.navDot} />Dashboard</div>
-                <div style={s.navItem} onClick={() => navigate('/timetable')}><div style={s.navDot} />Timetable</div>
-                <div style={s.navItem}><div style={s.navDot} />4-Year Planner</div>
-
-                <div style={s.navLabel}>Explore</div>
-                <div style={s.navItem} onClick={() => navigate('/modules')}><div style={s.navDot} />Module Search</div>
-                <div style={s.navItem}><div style={s.navDot} />UE Recommender</div>
-                <div style={s.navItem} onClick={() => navigate('/qna-hub')}><div style={s.navDot} />Q&amp;A Community</div>
-
-                <div style={s.navLabel}>Tools</div>
-                <div style={s.navItem} onClick={() => navigate('/su-optimiser')}><div style={s.navDot} />S/U Optimiser</div>
-                <div style={s.navItemActive}><div style={s.navDotActive} />Group Finder</div>
-                <div style={s.navItem} onClick={() => navigate('/bidding-heatmap')}><div style={s.navDot} />Bidding Heatmap</div>
-
-                <div style={s.sidebarBottom}>
-                    <div style={s.userPill}>
-                        <div style={s.avatar}>{initials}</div>
-                        <div>
-                            <div style={s.userName}>My Account</div>
-                            <div style={s.userEmail}>{userEmail || 'NUS Student'}</div>
-                        </div>
-                    </div>
-                    <button style={s.logoutBtn} onClick={() => { localStorage.removeItem('token'); navigate('/login') }}>
-                        Sign out
-                    </button>
-                </div>
-            </div>
+            <Sidebar active="group" userEmail={userEmail} />
 
             {/* Main area — two panels side by side */}
             <div style={s.main}>

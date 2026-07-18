@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import { BACKEND } from '../constants'
 
@@ -67,7 +66,7 @@ function Dashboard() {
         setSavingMatric(true)
         setMatricError('')
         try {
-            const res = await fetch(`${BACKEND}/su/userProfile`, {
+            const res = await fetch(`${BACKEND}/profile/userProfile`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
