@@ -7,6 +7,27 @@ import { requireAuth } from '../middleware/requireAuth';
 router.use(requireAuth);
 import { ApiResponse } from '../types/apiResponse';
 
+router.get('/userProfile', async (req: Request, res: Response<ApiResponse>) => {
+    const userID = req.user.id;
+    
+    try {
+        const userProfile = await userProfileDB.getUserProfile(userID);
+        return res.status(200).json({
+            success: true,
+            message: 'User profile fetched successfully',
+            data: userProfile,
+            error: null
+        });
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to fetch user profile',
+            data: null,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
 
 
 router.post('/userProfile', async (req: Request, res: Response<ApiResponse>) => {

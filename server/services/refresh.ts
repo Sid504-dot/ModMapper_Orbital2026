@@ -58,17 +58,29 @@ async function processEachModule(module: any, existingMap: Map<string, any>) {
 }
 
 export async function refreshModules() {
+    const failedModules: string[] = [];
+
     try {
         const allModules = await nusmods.getAllModules();
         const existingModules = await modulesDB.getAllModules();
-        
         const existingMap = new Map((existingModules.data ?? []).map((module: any) => [module.module_code, module]));
+
         let count = 0;
         let moduleArray: any[] = [];
+
+        const runBatch = async (batch: any[]) => {
+            const results = await Promise.allSettled(batch.map((m) => processEachModule(m, existingMap)));
+            results.forEach((result, i) => {
+                if (result.status === 'rejected') {
+                    console.error(`Failed: ${batch[i].moduleCode}`, result.reason);
+                    failedModules.push(batch[i].moduleCode);
+                }
+            });
+        };
+
         for (const module of allModules) {
             if (count === 10) {
-                await Promise.all(moduleArray.map((m) => processEachModule(m, existingMap)
-                    .catch(error => console.error(`Failed: ${m.moduleCode}`, error))));
+                await runBatch(moduleArray);
                 await delay(1000);
                 moduleArray = [];
                 count = 0;
@@ -76,13 +88,15 @@ export async function refreshModules() {
             moduleArray.push(module);
             count++;
         }
-        await Promise.all(moduleArray.map((m) => processEachModule(m, existingMap)
-            .catch(error => console.error(`Failed: ${m.moduleCode}`, error))));
-        await delay(1000);
+        await runBatch(moduleArray);
+
     } catch (error) {
         console.error('Error refreshing modules:', error);
     }
-    console.log('Module refresh complete');
+
+    console.log(failedModules.length > 0
+        ? `Module refresh finished with ${failedModules.length} failures: ${failedModules.join(', ')}`
+        : 'Module refresh complete: all modules succeeded');
 }
 
         
