@@ -1,5 +1,4 @@
-const GENERATION_MODEL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash';
+const GENERATION_MODEL = 'gemini-3.5-flash';
 
 const RERANK_PROMPT = `You are helping an NUS student choose which
 module to take from a fixed list of options for one semester slot.
