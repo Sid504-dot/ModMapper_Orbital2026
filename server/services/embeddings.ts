@@ -1,6 +1,6 @@
 const GEMINI_KEY = process.env.GEMINI_KEY;
 
-const EMBEDDING_MODEL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001';
+const EMBEDDING_MODEL = 'gemini-embedding-001';
 
 const GENERATION_MODEL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash'; 
 
