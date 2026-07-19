@@ -10,6 +10,11 @@ export function anyMissingPrereq (need: Record<number, PrereqLeaf[]>, taken: str
 
         for (const t of group) {
             if (typeof t !== 'string') {
+                if (!t || !Array.isArray(t.nOf)) {
+                    missing.push(typeof t === 'object' ? JSON.stringify(t) : String(t));
+                    continue;
+                }
+
                 const [required, modules] = t.nOf;
 
                 const completed = modules.filter(m =>

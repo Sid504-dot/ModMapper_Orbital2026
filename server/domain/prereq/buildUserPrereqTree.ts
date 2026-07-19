@@ -10,15 +10,16 @@ export function buildUserPrereqTree( moduleCodes: string[], prereqMap: Record<st
 
         const tree = prereqMap[moduleCode];
 
-        if (!tree || Object.keys(tree).length === 0) {
+        if (!tree || (typeof tree === 'object' && Object.keys(tree).length === 0)) {
             continue;
         }
-
 
         for (const prereqModule of moduleCodes) {
             let found = false;
 
-            if ('or' in tree) {
+            if (typeof tree === 'string') {
+                found = matches(prereqModule, tree);
+            } else if ('or' in tree) {
                 found = tree.or.some(x =>
                     typeof x !== 'string' && x.nOf
                         ? n0f(x, prereqModule)
@@ -26,6 +27,10 @@ export function buildUserPrereqTree( moduleCodes: string[], prereqMap: Record<st
                 );
             } else if ('and' in tree) {
                 found = tree.and.some(group => {
+                    if (typeof group === 'string') {
+                        return matches(prereqModule, group);
+                    }
+
                     if ('or' in group) {
                         return group.or.some(x =>
                             typeof x !== 'string' && x.nOf
