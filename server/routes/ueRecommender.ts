@@ -49,7 +49,12 @@ router.post('/user-ue-prompt', async (req: Request, res: Response<ApiResponse>) 
             throw new Error(`match_modules failed: ${error.message}`);
         }
 
+        console.log(`match_modules returned ${data?.length ?? 0} candidates`); // add this
+
         const modulesJson = await ueReccomenderDB.fetchModules(data, userID);
+
+        console.log(`fetchModules returned ${modulesJson?.length ?? 0} modules`); // add this
+
 
         try {
             const ans =
