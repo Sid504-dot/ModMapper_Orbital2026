@@ -29,6 +29,12 @@ const NAV_SECTIONS = [
             { key: 'heatmap', label: 'Bidding Heatmap', path: '/bidding-heatmap' },
         ],
     },
+    {
+        label: 'Account',
+        items: [
+            { key: 'profile', label: 'Profile Settings', path: '/profile' },
+        ],
+    },
 ]
 
 const s = {
@@ -146,7 +152,7 @@ function Sidebar({ active, userEmail = '' }) {
 
             {/* Bottom — user info + sign out */}
             <div style={s.sidebarBottom}>
-                <div style={s.userPill}>
+                <div style={{ ...s.userPill, cursor: 'pointer' }} onClick={() => navigate('/profile')}>
                     <div style={s.avatar}>{initials}</div>
                     <div>
                         <div style={s.userName}>My Account</div>
