@@ -64,6 +64,14 @@ function Profile() {
     const [suSaving, setSuSaving] = useState(false)
     const [suStatus, setSuStatus] = useState('')
 
+    const [gpa, setGpa] = useState('')
+    const [gpaSaving, setGpaSaving] = useState(false)
+    const [gpaStatus, setGpaStatus] = useState('')
+
+    const [major, setMajor] = useState('')
+    const [majorSaving, setMajorSaving] = useState(false)
+    const [majorStatus, setMajorStatus] = useState('')
+
     useEffect(() => {
         let cancelled = false
         const load = async () => {
@@ -82,6 +90,8 @@ function Profile() {
                     }
                     setInterest(result.data.interest ?? '')
                     setUsedSu(result.data.used_su != null ? String(result.data.used_su) : '')
+                    setGpa(result.data.gpa != null ? String(result.data.gpa) : '')
+                    setMajor(result.data.major ?? '')
                 } else {
                     wasMatricYearUnset.current = true
                 }
@@ -138,6 +148,39 @@ function Profile() {
             }
         } catch { setYearStatus('Network error') }
         finally { setYearSaving(false) }
+    }
+
+    const saveGpa = async () => {
+        const val = parseFloat(gpa)
+        if (isNaN(val) || gpaSaving) return
+        setGpaSaving(true); setGpaStatus('')
+        try {
+            const res = await fetch(`${BACKEND}/profile/updateGpa`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+                body: JSON.stringify({ newGpa: val }),
+            })
+            const result = await parseApi(res)
+            setGpaStatus(result.ok ? 'saved' : result.error || 'Error saving')
+            autoExpire(setGpaStatus)
+        } catch { setGpaStatus('Network error') }
+        finally { setGpaSaving(false) }
+    }
+
+    const saveMajor = async () => {
+        if (!major.trim() || majorSaving) return
+        setMajorSaving(true); setMajorStatus('')
+        try {
+            const res = await fetch(`${BACKEND}/profile/updateMajor`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+                body: JSON.stringify({ newMajor: major.trim() }),
+            })
+            const result = await parseApi(res)
+            setMajorStatus(result.ok ? 'saved' : result.error || 'Error saving')
+            autoExpire(setMajorStatus)
+        } catch { setMajorStatus('Network error') }
+        finally { setMajorSaving(false) }
     }
 
     const saveInterest = async () => {
@@ -229,6 +272,37 @@ function Profile() {
                                     <button style={matricYear && !yearSaving ? s.saveBtn : s.saveBtnDisabled}
                                         onClick={saveMatricYear} disabled={!matricYear || yearSaving}>
                                         {yearSaving ? 'Saving...' : 'Save'}
+                                    </button>
+                                </div>
+
+                                <div style={{ borderTop: '0.5px solid #d4c4a8', margin: '16px 0 14px' }} />
+                                <div style={s.fieldRow}>
+                                    <label style={s.label}>Major</label>
+                                    <input style={s.input} placeholder="e.g. Computer Science"
+                                        value={major}
+                                        onChange={e => { setMajor(e.target.value); setMajorStatus('') }} />
+                                </div>
+                                <div style={s.footer}>
+                                    <StatusLine status={majorStatus} />
+                                    <button style={major.trim() && !majorSaving ? s.saveBtn : s.saveBtnDisabled}
+                                        onClick={saveMajor} disabled={!major.trim() || majorSaving}>
+                                        {majorSaving ? 'Saving...' : 'Save Major'}
+                                    </button>
+                                </div>
+
+                                <div style={{ borderTop: '0.5px solid #d4c4a8', margin: '16px 0 14px' }} />
+                                <div style={s.fieldRow}>
+                                    <label style={s.label}>Current GPA</label>
+                                    <input style={s.inputNarrow} type="number" step="0.01" min="0" max="5"
+                                        placeholder="e.g. 4.50" value={gpa}
+                                        onChange={e => { setGpa(e.target.value); setGpaStatus('') }} />
+                                    <div style={s.hint}>Your cumulative GPA — shown on the Dashboard</div>
+                                </div>
+                                <div style={s.footer}>
+                                    <StatusLine status={gpaStatus} />
+                                    <button style={gpa && !gpaSaving ? s.saveBtn : s.saveBtnDisabled}
+                                        onClick={saveGpa} disabled={!gpa || gpaSaving}>
+                                        {gpaSaving ? 'Saving...' : 'Save GPA'}
                                     </button>
                                 </div>
                             </div>

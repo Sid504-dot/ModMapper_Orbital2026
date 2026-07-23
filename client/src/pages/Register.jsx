@@ -19,7 +19,8 @@ const s = {
     btn: { width: '100%', padding: '12px', background: '#b85c38', color: '#fdf8f2', border: 'none', borderRadius: '4px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.01em' },
     message: { fontSize: '13px', color: '#b85c38', marginTop: '12px', textAlign: 'center' },
     footer: { textAlign: 'center', fontSize: '13px', color: '#7a6a5a', marginTop: '20px' },
-    footerLink: { color: '#b85c38', fontWeight: '500', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px' }
+    footerLink: { color: '#b85c38', fontWeight: '500', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'inherit', fontSize: '13px' },
+    hint: { fontSize: '11px', color: '#7a6a5a', marginTop: '-10px', marginBottom: '14px' }
 }
 
 function Register() {
@@ -29,8 +30,14 @@ function Register() {
     const [message, setMessage] = useState('')
     const navigate = useNavigate()
 
+    const NUS_EMAIL = /^[^@\s]+@u\.nus\.edu$/i
+
     const handleSubmit = async (e) => {
         e.preventDefault()
+        if (!NUS_EMAIL.test(email.trim())) {
+            setMessage('Please use your NUS email (@u.nus.edu)')
+            return
+        }
         if (password !== confirmPassword) {
             setMessage('Passwords do not match')
             return
@@ -66,6 +73,7 @@ function Register() {
                 <form onSubmit={handleSubmit}>
                     <label style={s.label}>NUS Email</label>
                     <input style={s.input} type="email" placeholder="e0123456@u.nus.edu" value={email} onChange={(e) => setEmail(e.target.value)} />
+                    <div style={s.hint}>Sign up requires an @u.nus.edu email.</div>
                     <label style={s.label}>Password</label>
                     <input style={s.input} type="password" placeholder="••••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
                     <label style={s.label}>Confirm Password</label>
