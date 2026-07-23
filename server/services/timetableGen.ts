@@ -2,7 +2,7 @@ import { validateParsedConstraints } from '../domain/timetableGenerator/validate
 
 const GEMINI_KEY = process.env.GEMINI_KEY;
 
-const GENERATION_MODEL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash';
+const GENERATION_MODEL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash';
 
 const CONSTRAINT_PROMPT = `
 You extract timetable preferences into JSON.

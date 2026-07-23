@@ -22,7 +22,7 @@ export async function syncModuleEmbeddings() {
 
   const existingMap = new Map(existing.map(row => [row.module_code, row.source_hash]));
 
-  for (const row of modules.slice(0, 3)) {
+  for (const row of modules) {
     const text = `${row.module_name ?? ''} ${row.description ?? ''}`.trim();
     const storedHash = existingMap.get(row.module_code);  
     const currentHash = sha256(text);

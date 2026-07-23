@@ -1,6 +1,7 @@
 import supabase from './supabase';
 import { getUserSemByUserID } from './userSem';
 import { NUSModsLesson } from '../types/timetableGenerator';
+import { currentAcademicSemester } from '../domain/calendar/currentAcaSem';
 
 import { SavedLesson } from '../domain/timetableGenerator/expandSelectedSlots';
 
@@ -73,7 +74,7 @@ export async function getTimingsForModules (modules: string[]) {
         throw new Error(`Error placing module: ${error.message}`, { cause: error });
     }
 
-    const sem = new Date().getMonth() + 1 >= 7 ? 2 : 1;
+    const sem = currentAcademicSemester();
 
     const moduleTimings: Map<string, {examDate: Date, semester: number, timetable: NUSModsLesson[] | undefined}> = new Map();
 

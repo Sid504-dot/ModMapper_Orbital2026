@@ -7,13 +7,34 @@ import { requireAuth } from '../middleware/requireAuth';
 router.use(requireAuth);
 import { ApiResponse } from '../types/apiResponse';
 
+router.get('/userProfile', async (req: Request, res: Response<ApiResponse>) => {
+    const userID = req.user.id;
+    
+    try {
+        const userProfile = await userProfileDB.getUserProfile(userID);
+        return res.status(200).json({
+            success: true,
+            message: 'User profile fetched successfully',
+            data: userProfile,
+            error: null
+        });
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to fetch user profile',
+            data: null,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
 
 
 router.post('/userProfile', async (req: Request, res: Response<ApiResponse>) => {
     const userID = req.user.id;
 
     try {
-        const { matricYear, userInterest, name, usedSu } = req.body;
+        const { matricYear, userInterest, name, usedSu, currentGPA, major } = req.body;
 
         if (!matricYear) {
             return res.status(400).json({
@@ -24,8 +45,7 @@ router.post('/userProfile', async (req: Request, res: Response<ApiResponse>) => 
             });
         }
 
-        const userProfile =
-            await userProfileDB.upsertUserProfile(userID, matricYear, userInterest, name, usedSu);
+        const userProfile = await userProfileDB.upsertUserProfile(userID, matricYear, userInterest, name, usedSu, currentGPA, major);
 
         return res.status(200).json({
             success: true,
@@ -247,6 +267,80 @@ router.post('/add-previous-sems', async (req: Request, res: Response<ApiResponse
             message: 'Failed to save timetable entry',
             data: null,
             error: err instanceof Error ? err.message : 'Unknown error'
+        });
+    }
+});
+
+router.post('/updateGpa', async (req: Request, res: Response<ApiResponse>) => {
+    const userID = req.user.id;
+
+    try {
+        const { newGpa } = req.body;
+
+        if (newGpa === undefined) {
+            return res.status(400).json({
+                success: false,
+                message: 'New GPA value is required',
+                data: null,
+                error: 'Missing newGpa'
+            });
+        }
+
+        const updatedProfile =
+            await userProfileDB.changeGpa(userID, newGpa);
+
+        return res.status(200).json({
+            success: true,
+            message: 'GPA updated successfully',
+            data: updatedProfile,
+            error: null
+        });
+
+    } catch (error) {
+        console.error('Error updating GPA:', error);
+
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to update GPA',
+            data: null,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+
+router.post('/updateMajor', async (req: Request, res: Response<ApiResponse>) => {
+    const userID = req.user.id;
+
+    try {
+        const { newMajor } = req.body;
+
+        if (!newMajor) {
+            return res.status(400).json({
+                success: false,
+                message: 'New major is required',
+                data: null,
+                error: 'Missing newMajor'
+            });
+        }
+
+        const updatedProfile =
+            await userProfileDB.changeMajor(userID, newMajor);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Major updated successfully',
+            data: updatedProfile,
+            error: null
+        });
+
+    } catch (error) {
+        console.error('Error updating major:', error);
+
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to update major',
+            data: null,
+            error: error instanceof Error ? error.message : 'Unknown error'
         });
     }
 });

@@ -24,7 +24,7 @@ router.get('/', async (req: Request, res: Response<ApiResponse>) => {
             });
         }
 
-        const matricYear = Math.ceil(sem / 2) + sem % 2;
+        const matricYear = Math.ceil(sem / 2);
 
         const suPolicyData = await suPolicy.getSuPolicy(matricYear);
         const userSuInfoData = await userProfileDB.getSuInfo(userID);
@@ -88,16 +88,39 @@ router.get('/', async (req: Request, res: Response<ApiResponse>) => {
 router.post('/eligible', async (req: Request, res: Response<ApiResponse>) => {
 
     try {
-        const userReqModules =
-            req.body.map((m: any) => m.moduleCode);
+        if (!Array.isArray(req.body)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Expected an array of modules',
+                data: null,
+                error: 'Invalid request body'
+            });
+        }
 
-        const { data } =
+        const userReqModules = req.body
+            .map((m: any) => m?.moduleCode)
+            .filter((code: any): code is string => typeof code === 'string');
+
+        if (userReqModules.length !== req.body.length) {
+            return res.status(400).json({
+                success: false,
+                message: 'Every entry must have a string moduleCode',
+                data: null,
+                error: 'Invalid module code'
+            });
+        }
+
+        const { data, error } =
             await moduleDB.getSuAbleModulesByCodes(userReqModules);
+
+        if (error) {
+            throw error;
+        }
 
         return res.status(200).json({
             success: true,
             message: 'Eligible modules fetched successfully',
-            data: data,
+            data: data ?? [],
             error: null
         });
 
@@ -112,7 +135,6 @@ router.post('/eligible', async (req: Request, res: Response<ApiResponse>) => {
         });
     }
 });
-
 
 
 

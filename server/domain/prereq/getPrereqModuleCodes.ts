@@ -10,16 +10,16 @@ export function getPrereqModules( tree: PrereqTree | null | undefined ): Record<
         }
 
         return x.match(/[A-Z]{2,4}\d{1,4}[A-Z]{0,3}%?/)?.[0] ?? null;
-        // Extracts the module code from a prerequisite string.
-        // Matches NUS module codes such as:
-        // CS1010
-        // MA1511:D   -> MA1511
-        // CS1010%:D  -> CS1010%
-        // CS2%       -> CS2%
-        // The trailing ":D" or other grade requirements are ignored.
     };
 
-    if (!tree || Object.keys(tree).length === 0) {
+    if (!tree || (typeof tree === 'object' && Object.keys(tree).length === 0)) {
+        return ans;
+    }
+
+    // Handle bare leaf strings (e.g. "CS3230:D") passed in place of a tree object.
+    if (typeof tree === 'string') {
+        const extracted = extract(tree);
+        ans[1] = extracted !== null ? [extracted] : [];
         return ans;
     }
 
@@ -39,7 +39,10 @@ export function getPrereqModules( tree: PrereqTree | null | undefined ): Record<
     let count = 1;
 
     for (const group of tree.and) {
-        if ('or' in group) {
+        if (typeof group === 'string') {
+            const extracted = extract(group);
+            ans[count] = extracted !== null ? [extracted] : [];
+        } else if ('or' in group) {
             ans[count] = group.or
                 .map(extract)
                 .filter((x): x is PrereqLeaf => x !== null);

@@ -5,6 +5,10 @@ export function countPrereq(tree: PrereqTree | null | undefined): number {
         return 0;
     }
 
+    if (typeof tree === 'string') {
+        return 1;
+    }
+
     if (Object.keys(tree).length === 0) {
         return 0;
     }
