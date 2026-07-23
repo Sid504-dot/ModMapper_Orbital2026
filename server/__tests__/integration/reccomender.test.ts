@@ -14,132 +14,106 @@ jest.mock('../../middleware/requireAuth', () => ({
     }
 }));
 
+const app = express();
+app.use(express.json());
+app.use(router);
+
+const post = (user_input: string) =>
+    request(app).post('/user-ue-prompt').send({ user_input });
+
+type Row = { module_code: string; eligibility_status?: string };
+
+function mockPipeline(opts: {
+    eligible?: string[];
+    rpcRows?: Row[];
+    modules?: Row[];
+    reranked?: any[] | Error;
+} = {}) {
+    const {
+        eligible = [],
+        rpcRows = [{ module_code: 'CS2040S' }],
+        modules = [{ module_code: 'CS2040S', eligibility_status: 'eligible' }],
+        reranked = [{
+            module_code: 'CS2040S',
+            rank: 1,
+            rationale: 'Good match',
+            eligibility_status: 'eligible'
+        }]
+    } = opts;
+
+    const spies = {
+        getEligibleModules: jest.spyOn(qnaEligibilityDB, 'getEligibleModules')
+            .mockResolvedValue(eligible as any),
+        expandUserText: jest.spyOn(embeddingServer, 'expandUserText')
+            .mockResolvedValue('expanded'),
+        embed: jest.spyOn(embeddingServer, 'embed')
+            .mockResolvedValue([0.1, 0.2]),
+        rpc: jest.spyOn(supabase, 'rpc')
+            .mockResolvedValue({ data: rpcRows, error: null } as any),
+        fetchModules: jest.spyOn(ueRecommenderDB, 'fetchModules')
+            .mockResolvedValue(modules as any),
+        rerankAndRationale: jest.spyOn(embeddingServer, 'rerankAndRationale')
+    };
+
+    reranked instanceof Error
+        ? spies.rerankAndRationale.mockRejectedValue(reranked)
+        : spies.rerankAndRationale.mockResolvedValue(reranked as any);
+
+    return spies;
+}
+
 describe('UE Recommender', () => {
-    const app = express();
+    afterEach(() => jest.restoreAllMocks());
 
-    beforeAll(() => {
-        app.use(express.json());
-        app.use(router);
-    });
+    test('returns reranked recommendations', async () => {
+        mockPipeline();
 
-    test('returns reranked recommendations successfully', async () => {
-        jest.spyOn(qnaEligibilityDB, 'getEligibleModules')
-            .mockResolvedValue(['CS1010']);
-
-        jest.spyOn(embeddingServer, 'expandUserText')
-            .mockResolvedValue('expanded');
-
-        jest.spyOn(embeddingServer, 'embed')
-            .mockResolvedValue([0.1, 0.2]);
-
-        jest.spyOn(supabase, 'rpc')
-            .mockResolvedValue({
-                data: [{ module_code: 'CS2040S' }],
-                error: null
-            } as any);
-
-        jest.spyOn(ueRecommenderDB, 'fetchModules')
-            .mockResolvedValue([
-                {
-                    module_code: 'CS2040S',
-                    eligibility_status: 'eligible'
-                }
-            ] as any);
-
-        jest.spyOn(embeddingServer, 'rerankAndRationale')
-            .mockResolvedValue([
-                {
-                    module_code: 'CS2040S',
-                    rank: 1,
-                    rationale: 'Good match',
-                    eligibility_status: 'eligible'
-                }
-            ] as any);
-
-        const res = await request(app)
-            .post('/user-ue-prompt')
-            .send({ user_input: 'AI' });
+        const res = await post('AI');
 
         expect(res.status).toBe(200);
-        expect(res.body[0].module_code).toBe('CS2040S');
+        expect(res.body.success).toBe(true);
+        expect(res.body.message).toMatch(/reranking/);
+        expect(res.body.error).toBeNull();
+        expect(res.body.data).toHaveLength(1);
+        expect(res.body.data[0]).toMatchObject({
+            module_code: 'CS2040S',
+            rationale: 'Good match'
+        });
     });
 
-    test('returns raw modules when rerank fails', async () => {
-        jest.spyOn(qnaEligibilityDB, 'getEligibleModules')
-            .mockResolvedValue([]);
+    test('falls back to raw modules when rerank throws', async () => {
+        jest.spyOn(console, 'error').mockImplementation(() => {});
+        mockPipeline({ reranked: new Error('Gemini failed') });
 
-        jest.spyOn(embeddingServer, 'expandUserText')
-            .mockResolvedValue('expanded');
-
-        jest.spyOn(embeddingServer, 'embed')
-            .mockResolvedValue([0.1]);
-
-        jest.spyOn(supabase, 'rpc')
-            .mockResolvedValue({
-                data: [{ module_code: 'CS2040S' }],
-                error: null
-            } as any);
-
-        jest.spyOn(ueRecommenderDB, 'fetchModules')
-            .mockResolvedValue([
-                {
-                    module_code: 'CS2040S',
-                    eligibility_status: 'eligible'
-                }
-            ] as any);
-
-        jest.spyOn(embeddingServer, 'rerankAndRationale')
-            .mockRejectedValue(new Error('Gemini failed'));
-
-        const res = await request(app)
-            .post('/user-ue-prompt')
-            .send({ user_input: 'AI' });
+        const res = await post('AI');
 
         expect(res.status).toBe(200);
-        expect(res.body[0].module_code).toBe('CS2040S');
+        expect(res.body.message).toBe('Recommendations generated');
+        expect(res.body.data[0].module_code).toBe('CS2040S');
+        expect(res.body.data[0].rationale).toBeUndefined();
     });
 
-    test('completed modules are excluded from recommendations', async () => {
-        jest.spyOn(qnaEligibilityDB, 'getEligibleModules')
-            .mockResolvedValue(['CS2030']);
+    test('falls back to raw modules when rerank returns empty', async () => {
+        mockPipeline({ reranked: [] });
 
-        jest.spyOn(embeddingServer, 'expandUserText')
-            .mockResolvedValue('expanded');
-
-        jest.spyOn(embeddingServer, 'embed')
-            .mockResolvedValue([0.1]);
-
-        jest.spyOn(supabase, 'rpc')
-            .mockResolvedValue({
-                data: [{ module_code: 'CS2040S' }],
-                error: null
-            } as any);
-
-        jest.spyOn(ueRecommenderDB, 'fetchModules')
-            .mockResolvedValue([
-                {
-                    module_code: 'CS2040S',
-                    eligibility_status: 'eligible'
-                }
-            ] as any);
-
-        jest.spyOn(embeddingServer, 'rerankAndRationale')
-            .mockResolvedValue([
-                {
-                    module_code: 'CS2040S',
-                    rank: 1,
-                    rationale: 'Good match',
-                    eligibility_status: 'eligible'
-                }
-            ] as any);
-
-        const res = await request(app)
-            .post('/user-ue-prompt')
-            .send({ user_input: 'Programming' });
+        const res = await post('AI');
 
         expect(res.status).toBe(200);
-        expect(
-            res.body.find((m: any) => m.module_code === 'CS2030')
-        ).toBeUndefined();
+        expect(res.body.message).toBe('Recommendations generated');
+        expect(res.body.data[0].module_code).toBe('CS2040S');
+    });
+
+    test('returns 500 when the pipeline throws', async () => {
+        jest.spyOn(console, 'error').mockImplementation(() => {});
+        mockPipeline();
+        jest.spyOn(embeddingServer, 'embed')
+            .mockRejectedValue(new Error('embed down'));
+
+        const res = await post('AI');
+
+        expect(res.status).toBe(500);
+        expect(res.body.success).toBe(false);
+        expect(res.body.data).toBeNull();
+        expect(res.body.error).toBe('embed down');
     });
 });
