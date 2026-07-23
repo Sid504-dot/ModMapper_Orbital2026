@@ -161,7 +161,6 @@ function SUOptimiser() {
     // Projected GPA respects the user's S/U selections
     const projectedGPA = calcGPA(modules)
     const gpaDelta = currentGPA !== null && projectedGPA !== null ? projectedGPA - currentGPA : null
-    const suMCs = modules.filter(m => m.isSU).reduce((sum, m) => sum + (m.mcs || 0), 0)
     const recommendations = getRecommendations(modules)
 
     // Which stat card style to use for GPA Change
