@@ -68,24 +68,40 @@ function Login() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [message, setMessage] = useState('')
+    const [loading, setLoading] = useState(false)
     const [showForgotPassword, setShowForgotPassword] = useState(false)
     const navigate = useNavigate()
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        const res = await fetch(`${BACKEND}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        })
-        const result = await parseApi(res)
-        if (!result.ok) {
-            setMessage(result.error)
-            return
+        setLoading(true)
+        setMessage('')
+        try {
+            const res = await fetch(`${BACKEND}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            })
+            const result = await parseApi(res)
+            if (!result.ok) {
+                setMessage(result.error)
+                return
+            }
+            const token = result.data
+            localStorage.setItem('token', token)
+            localStorage.setItem('userEmail', email)
+
+            const profileRes = await fetch(`${BACKEND}/profile/userProfile`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            const profileResult = await parseApi(profileRes)
+            const hasMatricYear = profileResult.ok && profileResult.data?.start_matric_year != null
+            navigate(hasMatricYear ? '/dashboard' : '/profile')
+        } catch {
+            setMessage('Network error — please try again')
+        } finally {
+            setLoading(false)
         }
-        localStorage.setItem('token', result.data)
-        localStorage.setItem('userEmail', email)
-        navigate('/dashboard')
     }
 
     const handleForgotPassword = async (e) => {
@@ -137,7 +153,9 @@ function Login() {
                         <label style={s.label}>Password</label>
                         <input style={s.input} type="password" placeholder="••••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
                         <button style={s.forgot} type="button" onClick={() => setShowForgotPassword(true)}>Forgot password?</button>
-                        <button style={s.btnSubmit} type="submit">Sign in to ModMapper</button>
+                        <button style={s.btnSubmit} type="submit" disabled={loading}>
+                            {loading ? 'Signing in…' : 'Sign in to ModMapper'}
+                        </button>
                     </form>
                     <p style={s.message}>{message}</p>
                     <div style={s.dividerWrap}>

@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
+import { BACKEND } from '../constants'
+import { parseApi } from '../utils/api'
 
 // Grade to grade point mapping (NUS grading scheme)
 const GRADE_POINTS = {
@@ -121,6 +123,22 @@ const s = {
 function SUOptimiser() {
     const [userEmail] = useState(() => localStorage.getItem('userEmail') || '')
     const [modules, setModules] = useState([blankRow(), blankRow(), blankRow()])
+    const [profileUsedSu, setProfileUsedSu] = useState(null)
+
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const res = await fetch(`${BACKEND}/profile/userProfile`, {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+                })
+                const result = await parseApi(res)
+                if (result.ok && result.data && result.data.used_su != null) {
+                    setProfileUsedSu(result.data.used_su)
+                }
+            } catch { /* silently ignore — stat card falls back to static text */ }
+        }
+        load()
+    }, [])
 
     // Row helpers
     const updateRow = (id, field, value) =>
@@ -143,7 +161,6 @@ function SUOptimiser() {
     // Projected GPA respects the user's S/U selections
     const projectedGPA = calcGPA(modules)
     const gpaDelta = currentGPA !== null && projectedGPA !== null ? projectedGPA - currentGPA : null
-    const suMCs = modules.filter(m => m.isSU).reduce((sum, m) => sum + (m.mcs || 0), 0)
     const recommendations = getRecommendations(modules)
 
     // Which stat card style to use for GPA Change
@@ -203,9 +220,14 @@ function SUOptimiser() {
                         </div>
                     </div>
                     <div style={s.statCard}>
-                        <div style={s.statLabel}>S/U'd MCs</div>
-                        <div style={s.statValue}>{suMCs}<span style={{ fontSize: '13px', fontWeight: '400', color: '#7a6a5a', marginLeft: '3px' }}>mc</span></div>
-                        <div style={s.statDelta}>of ~32 MC allowance</div>
+                        <div style={s.statLabel}>S/U Remaining</div>
+                        <div style={s.statValue}>
+                            {profileUsedSu != null ? Math.max(0, 32 - profileUsedSu) : '—'}
+                            <span style={{ fontSize: '13px', fontWeight: '400', color: '#7a6a5a', marginLeft: '3px' }}>mc</span>
+                        </div>
+                        <div style={s.statDelta}>
+                            {profileUsedSu != null ? `${profileUsedSu} MC exercised` : 'set in Profile Settings'}
+                        </div>
                     </div>
                 </div>
 
