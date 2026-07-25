@@ -27,3 +27,23 @@ export const MODULE_COLOURS = [
     '#b85c38', '#1a2744', '#3d5a73',
     '#7a6a5a', '#c9a84c', '#2e3f6f'
 ]
+
+// SoC fallback programme catalog — used when GET /planner/ returns an empty programmes table.
+// TODO: Remove once Siddharth's programmes table is seeded; dropdowns will then be API-driven.
+export const SOC_MAJORS = [
+    { value: 'cs', label: 'Computer Science' },
+    { value: 'bza', label: 'Business Analytics' },
+    { value: 'is', label: 'Information Systems' },
+    { value: 'infosec', label: 'Information Security' },
+    { value: 'ceg', label: 'Computer Engineering' },
+]
+
+export const SOC_SECOND_MAJORS = [
+    'Mathematics', 'Statistics', 'Economics', 'Finance',
+    'Data Science & Analytics', 'Applied Mathematics', 'Quantitative Finance',
+]
+
+export const SOC_MINORS = [
+    'Statistics', 'Mathematics', 'Economics', 'Financial Mathematics',
+    'Data Science & Analytics', 'Entrepreneurship (i&E)', 'Public Policy', 'Management',
+]

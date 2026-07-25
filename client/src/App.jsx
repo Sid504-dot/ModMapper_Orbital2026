@@ -12,6 +12,7 @@ import JoinGroup from './pages/JoinGroup'
 import BiddingHeatmap from './pages/BiddingHeatmap'
 import AuthGuard from './components/AuthGuard'
 import UERecommender from './pages/UERecommender'
+import YearPlanner from './pages/YearPlanner'
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
         <Route path="/group-finder/join/:inviteToken" element={<AuthGuard><JoinGroup /></AuthGuard>} />
         <Route path="/bidding-heatmap" element={<AuthGuard><BiddingHeatmap /></AuthGuard>} />
         <Route path="/ue-recommender" element={<AuthGuard><UERecommender /></AuthGuard>} />
+        <Route path="/year-planner" element={<AuthGuard><YearPlanner /></AuthGuard>} />
       </Routes>
     </BrowserRouter>
   )
