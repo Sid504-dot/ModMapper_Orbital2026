@@ -12,6 +12,7 @@ async function processEachModule(module: any, existingMap: Map<string, any>) {
     const prereqTree = fullData.prereqTree;
     const preclusion = fullData.preclusion;
     const fulReq = fullData.fulfillRequirements;
+    const moduleCredit = fullData.moduleCredit == null ? null : Number(fullData.moduleCredit);
     const cachedAt = new Date().toISOString();
 
     if (existingModule) {
@@ -25,7 +26,8 @@ async function processEachModule(module: any, existingMap: Map<string, any>) {
                 description: description,
                 prereq_tree: prereqTree,
                 preclusion: preclusion,
-                fulfill_requirements: fulReq
+                fulfill_requirements: fulReq,
+                module_credit: moduleCredit,
             });
             console.log(`Updated module: ${moduleCode}`);
         } else {
@@ -38,7 +40,8 @@ async function processEachModule(module: any, existingMap: Map<string, any>) {
                 description: description,
                 prereq_tree: prereqTree,
                 preclusion: preclusion,
-                fulfill_requirements: fulReq
+                fulfill_requirements: fulReq,
+                module_credit: moduleCredit,
             });
             console.log(`Updated cache timestamp for module: ${moduleCode}`);
         }} else {
@@ -51,7 +54,8 @@ async function processEachModule(module: any, existingMap: Map<string, any>) {
             description: description,
             prereq_tree: prereqTree,
             preclusion: preclusion,
-            fulfill_requirements: fulReq
+            fulfill_requirements: fulReq,
+            module_credit: moduleCredit,
         });
         console.log(`Inserted new module: ${moduleCode}`);
     }

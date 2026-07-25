@@ -3,8 +3,19 @@ import { getUserSemByUserID } from './userSem';
 import { NUSModsLesson } from '../types/timetableGenerator';
 import { currentAcademicSemester } from '../domain/calendar/currentAcaSem';
 
+import { SavedLesson } from '../domain/timetableGenerator/expandSelectedSlots';
+
+export interface UpsertTimetableEntry {
+    user_id: string;
+    timetable_data: SavedLesson[];
+    sem_number?: number;
+}
+
 export async function getTimetableByUserID(userID: string) {
     const sem = await getUserSemByUserID(userID);
+    if (sem === null) {
+        throw new Error('Cannot determine semester: matriculation year not set');
+    } 
     const { data, error } = await supabase.from('user_timetable')
         .select().eq('user_id', userID).eq('sem_number', sem).maybeSingle();
     if (error) {
@@ -13,18 +24,24 @@ export async function getTimetableByUserID(userID: string) {
     return data;
 }
 
-export async function upsertTimetableEntry(entryData: { user_id: string; sem_number: number }) {
+export async function upsertTimetableEntry(entryData: UpsertTimetableEntry) {
     const sem = await getUserSemByUserID(entryData.user_id);
+
     if (sem === null) {
         throw new Error('Cannot determine semester: matriculation year not set');
     }
+
     entryData.sem_number = sem;
-    const { data, error } = await supabase.from('user_timetable')
+
+    const { data, error } = await supabase
+        .from('user_timetable')
         .upsert(entryData, { onConflict: 'user_id,sem_number' })
         .select();
+
     if (error) {
         throw new Error(`upsertTimetableEntry failed: ${error.message}`, { cause: error });
     }
+
     return data;
 }
 
