@@ -113,11 +113,47 @@ export async function parsePreferencesWithGemini( preferenceText: string, system
             return validateParsedConstraints(null);
         }
 
-        return validateParsedConstraints(parsed);
+        return validateParsedConstraints(normaliseConstraints(parsed));
 
     } catch {
         return validateParsedConstraints(null);
     } finally {
         clearTimeout(timeout);
     }
+}
+
+// Gemini returns "10:00" / "10am" and validateParsedConstraints
+// rejects anything that isn't HHMM so normalise before validating.
+function normaliseTime(value: unknown): unknown {
+    if (typeof value !== 'string') return value;
+
+    const trimmed = value.trim().toLowerCase();
+
+    const digits = trimmed.match(/^(\d{1,2}):?(\d{2})$/);
+    if (digits) {
+        return digits[1].padStart(2, '0') + digits[2];
+    }
+
+    const meridiem = trimmed.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)$/);
+    if (meridiem) {
+        let hour = parseInt(meridiem[1], 10) % 12;
+        if (meridiem[3] === 'pm') hour += 12;
+        return String(hour).padStart(2, '0') + (meridiem[2] ?? '00');
+    }
+
+    return value;
+}
+
+function normaliseConstraints(raw: unknown): unknown {
+    if (typeof raw !== 'object' || raw === null) return raw;
+
+    const obj = raw as Record<string, unknown>;
+
+    if (typeof obj.hard !== 'object' || obj.hard === null) return obj;
+
+    const hard = { ...obj.hard as Record<string, unknown> };
+    hard.earliestStart = normaliseTime(hard.earliestStart);
+    hard.latestEnd = normaliseTime(hard.latestEnd);
+
+    return { ...obj, hard };
 }
