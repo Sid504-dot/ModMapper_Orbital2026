@@ -13,6 +13,9 @@ export interface UpsertTimetableEntry {
 
 export async function getTimetableByUserID(userID: string) {
     const sem = await getUserSemByUserID(userID);
+    if (sem === null) {
+        throw new Error('Cannot determine semester: matriculation year not set');
+    } 
     const { data, error } = await supabase.from('user_timetable')
         .select().eq('user_id', userID).eq('sem_number', sem).maybeSingle();
     if (error) {
