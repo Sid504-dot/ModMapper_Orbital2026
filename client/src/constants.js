@@ -4,7 +4,9 @@
 
 export const BACKEND = 'https://modmapper-orbital2026.onrender.com'
 
-export const NUSMODS_API = 'https://api.nusmods.com/v2/2024-2025'
+export const CURRENT_ACAD_YEAR = '2024-2025'
+
+export const NUSMODS_API = `https://api.nusmods.com/v2/${CURRENT_ACAD_YEAR}`
 
 export const NUSMODS_MODULE_LIST_URL = `${NUSMODS_API}/moduleList.json`
 export const NUSMODS_MODULE_URL = (moduleCode) => `${NUSMODS_API}/modules/${encodeURIComponent(moduleCode)}.json`
