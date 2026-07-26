@@ -5,9 +5,7 @@ const GEMINI_KEY = process.env.GEMINI_KEY;
 const GENERATION_MODEL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash';
 
 const CONSTRAINT_PROMPT = `
-You extract timetable preferences into JSON.
-
-Return only valid JSON.
+You extract timetable preferences into JSON. Return JSON only.
 
 {
   "hard": {
@@ -25,11 +23,34 @@ Return only valid JSON.
   }
 }
 
-Rules:
+HARD vs SOFT — this is the most important rule.
+"hard" means the timetable is REJECTED if violated. Only use hard when the user
+expresses a genuine impossibility or an explicit numeric cutoff: "cannot",
+"must not", "I work Fridays", "no classes after 4pm", "nothing before 10".
+Everything else — likes, prefers, ideally, would rather, wants — is SOFT.
+When unsure, choose SOFT.
+
+FORMATS
+- Days: full English names, capitalised. "Monday", "Friday". Never "Mon"/"friday".
+- Times: "HHMM", 24-hour, always 4 digits. "0800", "1630". Never "8", "8am", "16:30".
+- maxDailyHours: a number, only if the user states a limit in hours.
+
+OTHER RULES
 - Do not invent preferences the user did not state.
-- Use null for unknown scalar values.
-- Use [] for unknown array values.
-- Return JSON only.
+- Never set both preferEarlyStart and preferLateStart to true.
+- Use null for unknown scalars, [] for unknown arrays.
+
+EXAMPLES
+
+Input: "morning classes"
+{"hard":{"freeDays":[],"earliestStart":null,"latestEnd":null,"maxDailyHours":null},
+ "soft":{"preferBackToBack":null,"preferEarlyStart":true,"preferLateStart":null,
+         "preferFreeDays":[],"minimizeCampusDays":null}}
+
+Input: "I work Fridays so I can't have anything then, and please no classes after 6pm. Would be nice to keep Wednesday light too."
+{"hard":{"freeDays":["Friday"],"earliestStart":null,"latestEnd":"1800","maxDailyHours":null},
+ "soft":{"preferBackToBack":null,"preferEarlyStart":null,"preferLateStart":null,
+         "preferFreeDays":["Wednesday"],"minimizeCampusDays":null}}
 `;
 
 export async function parsePreferencesWithGemini( preferenceText: string, systemPrompt = CONSTRAINT_PROMPT) {

@@ -101,6 +101,15 @@ router.post('/generate-timetable', async (req: Request, res: Response<ApiRespons
 
         const { options, truncated } = generateTimetableOptions( modules, semester, constraints, { maxResults: 5 });
 
+        if (options.length === 0) {
+            return res.status(200).json({
+                success: false,
+                message: 'No clash-free timetable satisfies those preferences.',
+                data: { options: [], constraints, valid, issues, truncated },
+                error: 'NO_FEASIBLE_TIMETABLE'
+            });
+        }
+
         return res.status(200).json({
             success: true,
             message: 'Timetable generated successfully.',
