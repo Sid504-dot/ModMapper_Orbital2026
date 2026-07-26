@@ -101,6 +101,9 @@ router.post('/generate-timetable', async (req: Request, res: Response<ApiRespons
 
         const { options, truncated } = generateTimetableOptions( modules, semester, constraints, { maxResults: 5 });
 
+        console.log('constraints', JSON.stringify(constraints));
+        console.log('options', options.length, 'truncated', truncated);
+
         if (options.length === 0) {
             return res.status(200).json({
                 success: false,
