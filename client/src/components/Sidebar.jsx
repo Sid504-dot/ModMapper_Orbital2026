@@ -10,7 +10,7 @@ const NAV_SECTIONS = [
         items: [
             { key: 'dashboard', label: 'Dashboard', path: '/dashboard' },
             { key: 'timetable', label: 'Timetable', path: '/timetable' },
-            { key: 'planner', label: '4-Year Planner', path: null }, // not built yet
+            { key: 'planner', label: '4-Year Planner', path: '/year-planner' },
         ],
     },
     {

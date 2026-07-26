@@ -83,9 +83,8 @@ function BiddingHeatmap() {
     }
 
     // Compute max demand across all slots for colour normalisation
-    // Any field that looks like a count is used as the demand value
     const maxDemand = slots.reduce((max, s) => {
-        const count = s.demand_count ?? s.count ?? s.demand ?? 0
+        const count = s.user_count ?? 0
         return count > max ? count : max
     }, 0)
 
@@ -141,7 +140,7 @@ function BiddingHeatmap() {
                             ) : (
                                 slots.map((slot, i) => {
                                     // Defensive — try multiple possible field names
-                                    const count = slot.demand_count ?? slot.count ?? slot.demand ?? 0
+                                    const count = slot.user_count ?? 0
                                     const ratio = maxDemand > 0 ? (count / maxDemand) * 100 : 0
                                     const classNo = slot.class_no ?? slot.classNo ?? ''
                                     const lessonType = slot.lesson_type ?? slot.lessonType ?? ''
