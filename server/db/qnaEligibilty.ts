@@ -4,6 +4,10 @@ import { getUserSemByUserID } from './userSem';
 export async function getEligibleModules(userID: string) {
     const currentSem = await getUserSemByUserID(userID);
 
+    if (currentSem == null) {
+        return [];
+    }
+
     const {data , error} = await supabase
         .from('user_timetable')
         .select()
