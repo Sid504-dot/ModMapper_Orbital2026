@@ -35,8 +35,7 @@ export async function upsertUserProfile(userID: string, matricYear: number, user
 export async function changeProfileName(userID: string, newName: string) {
     const { data, error } = await supabase
         .from('user_profile')
-        .update({ profile_name: newName })
-        .eq('user_id', userID)
+        .upsert({ user_id: userID, profile_name: newName }, { onConflict: 'user_id' })
         .select();
 
     if (error) {
@@ -49,8 +48,7 @@ export async function changeProfileName(userID: string, newName: string) {
 export async function changeUserInterest(userID: string, newInterest: string) {
     const { data, error } = await supabase
         .from('user_profile')
-        .update({ interest: newInterest })
-        .eq('user_id', userID)
+        .upsert({ user_id: userID, interest: newInterest }, { onConflict: 'user_id' })
         .select();
 
     if (error) {
@@ -63,8 +61,7 @@ export async function changeUserInterest(userID: string, newInterest: string) {
 export async function changeMatricYear(userID: string, newMatricYear: number) {
     const { data, error } = await supabase
         .from('user_profile')
-        .update({ start_matric_year: newMatricYear })
-        .eq('user_id', userID)
+        .upsert({ user_id: userID, start_matric_year: newMatricYear }, { onConflict: 'user_id' })
         .select();
 
     if (error) {
@@ -77,8 +74,7 @@ export async function changeMatricYear(userID: string, newMatricYear: number) {
 export async function changeUsedSu(userID: string, newUsedSu: number) {
     const { data, error } = await supabase
         .from('user_profile')
-        .update({ used_su: newUsedSu })
-        .eq('user_id', userID)
+        .upsert({ user_id: userID, used_su: newUsedSu }, { onConflict: 'user_id' })
         .select();
 
     if (error) {
@@ -90,8 +86,7 @@ export async function changeUsedSu(userID: string, newUsedSu: number) {
 export async function changeGpa(userID: string, newGpa: number) {
     const { data, error } = await supabase
         .from('user_profile')
-        .update({ gpa: newGpa })
-        .eq('user_id', userID)
+        .upsert({ user_id: userID, gpa: newGpa }, { onConflict: 'user_id' })
         .select();
 
     if (error) {
@@ -103,8 +98,7 @@ export async function changeGpa(userID: string, newGpa: number) {
 export async function changeMajor(userID: string, newMajor: string) {
     const { data, error } = await supabase
         .from('user_profile')
-        .update({ major: newMajor })
-        .eq('user_id', userID)
+        .upsert({ user_id: userID, major: newMajor }, { onConflict: 'user_id' })
         .select();
 
     if (error) {
