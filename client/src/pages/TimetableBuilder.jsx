@@ -270,7 +270,7 @@ function TimetableBuilder() {
             const result = await parseApi(res)
             if (!result.ok) {
                 setAiStatus('error')
-                setAiError('Could not generate timetable. Please try again or adjust preferences.')
+                setAiError(result.error ?? 'Could not generate timetable. Adjust your preferences and try again.')
                 return
             }
             const options = result.data?.options ?? []
