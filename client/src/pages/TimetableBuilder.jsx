@@ -69,6 +69,32 @@ const s = {
     }),
     clashBanner: { background: '#fdecea', border: '0.5px solid #f5a19a', borderRadius: '6px', padding: '8px 12px', marginBottom: '14px', fontSize: '12px', color: '#b71c1c' },
     loadError: { fontSize: '11px', color: '#b71c1c', background: '#fdecea', borderRadius: '4px', padding: '6px 8px', border: '0.5px solid #f5a19a' },
+    aiBtn: { padding: '7px 12px', background: '#1a2744', color: '#fdf8f2', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.02em' },
+    backdrop: { position: 'fixed', inset: 0, background: 'rgba(26,39,68,0.55)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    modal: { background: '#fdf8f2', border: '0.5px solid #d4c4a8', borderRadius: '10px', width: '520px', maxWidth: '90vw', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' },
+    modalHeader: { padding: '18px 20px 14px', borderBottom: '0.5px solid #d4c4a8', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
+    modalTitle: { fontSize: '15px', fontWeight: '600', color: '#1a2744', margin: 0 },
+    modalSub: { fontSize: '12px', color: '#7a6a5a', marginTop: '3px' },
+    modalClose: { background: 'none', border: 'none', fontSize: '18px', color: '#7a6a5a', cursor: 'pointer', lineHeight: 1, padding: '0 2px' },
+    modalBody: { padding: '18px 20px', overflowY: 'auto', flex: 1 },
+    prefLabel: { fontSize: '11px', fontWeight: '600', color: '#7a6a5a', letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace", marginBottom: '6px' },
+    prefTextarea: { width: '100%', height: '80px', padding: '8px 10px', border: '0.5px solid #d4c4a8', borderRadius: '6px', fontSize: '13px', fontFamily: 'inherit', background: '#fff', color: '#1a2744', resize: 'vertical', outline: 'none', boxSizing: 'border-box' },
+    chipRow: { display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '6px' },
+    chip: { background: '#f5edd8', border: '0.5px solid #d4c4a8', borderRadius: '4px', padding: '3px 7px', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace", color: '#1a2744' },
+    modalFooter: { padding: '12px 20px', borderTop: '0.5px solid #d4c4a8', display: 'flex', gap: '8px', justifyContent: 'flex-end' },
+    genBtn: { padding: '8px 16px', background: '#b85c38', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: "'JetBrains Mono', monospace" },
+    genBtnDis: { padding: '8px 16px', background: '#d4c4a8', color: '#7a6a5a', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: '600', cursor: 'not-allowed', fontFamily: "'JetBrains Mono', monospace" },
+    cancelBtn: { padding: '8px 14px', background: 'none', border: '0.5px solid #d4c4a8', borderRadius: '4px', fontSize: '12px', color: '#7a6a5a', cursor: 'pointer', fontFamily: "'JetBrains Mono', monospace" },
+    optionCard: { border: '0.5px solid #d4c4a8', borderRadius: '8px', padding: '12px 14px', marginBottom: '10px', background: '#fff' },
+    optionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' },
+    optionRank: { fontSize: '13px', fontWeight: '600', color: '#1a2744', fontFamily: "'JetBrains Mono', monospace" },
+    optionApply: { padding: '5px 12px', background: '#b85c38', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: "'JetBrains Mono', monospace" },
+    optionMeta: { fontSize: '11px', color: '#7a6a5a', display: 'flex', gap: '12px', marginBottom: '8px' },
+    optionDays: { display: 'flex', flexWrap: 'wrap', gap: '4px' },
+    optionDayChip: { background: '#f5edd8', border: '0.5px solid #d4c4a8', borderRadius: '3px', padding: '2px 6px', fontSize: '10px', fontFamily: "'JetBrains Mono', monospace", color: '#1a2744' },
+    regenBtn: { padding: '8px 14px', background: 'none', border: '0.5px solid #b85c38', borderRadius: '4px', fontSize: '12px', color: '#b85c38', cursor: 'pointer', fontFamily: "'JetBrains Mono', monospace" },
+    aiErrorMsg: { fontSize: '12px', color: '#b71c1c', background: '#fdecea', borderRadius: '4px', padding: '8px 10px', border: '0.5px solid #f5a19a', marginBottom: '14px' },
+    emptyHint: { fontSize: '12px', color: '#7a6a5a', fontStyle: 'italic', marginTop: '8px' },
     dayHeaders: { display: 'flex', marginLeft: '52px', marginBottom: '4px' },
     dayLabel: { flex: 1, textAlign: 'center', fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', fontWeight: '600', color: '#1a2744', letterSpacing: '0.06em' },
 }
@@ -82,6 +108,11 @@ function TimetableBuilder() {
     const [selectedSlots, setSelectedSlots] = useState({})
     const [saveStatus, setSaveStatus] = useState('')
     const [loadError, setLoadError] = useState('')
+    const [aiModalOpen, setAiModalOpen] = useState(false)
+    const [aiPrefs, setAiPrefs] = useState('')
+    const [aiStatus, setAiStatus] = useState('idle') // 'idle' | 'loading' | 'results' | 'error'
+    const [aiOptions, setAiOptions] = useState([])
+    const [aiError, setAiError] = useState('')
 
     // Load saved timetable on mount — reconstructs state from flat lesson array
     useEffect(() => {
@@ -217,6 +248,55 @@ function TimetableBuilder() {
             delete next[moduleCode]
             return next
         })
+    }
+
+    const openAiModal = () => {
+        setAiStatus('idle')
+        setAiError('')
+        setAiOptions([])
+        setAiModalOpen(true)
+    }
+
+    const handleAiGenerate = async () => {
+        setAiStatus('loading')
+        setAiError('')
+        const token = localStorage.getItem('token')
+        try {
+            const res = await fetch(`${BACKEND}/timetable/generate-timetable`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ user_request: aiPrefs, modules: addedModules }),
+            })
+            const result = await parseApi(res)
+            if (!result.ok) {
+                setAiStatus('error')
+                setAiError('Could not generate timetable. Please try again or adjust preferences.')
+                return
+            }
+            const options = result.data?.options ?? []
+            if (options.length === 0) {
+                setAiStatus('error')
+                setAiError("AI couldn't generate a valid schedule. Try different preferences.")
+                return
+            }
+            setAiOptions(options)
+            setAiStatus('results')
+        } catch {
+            setAiStatus('error')
+            setAiError('Could not generate timetable. Please try again or adjust preferences.')
+        }
+    }
+
+    const handleApplyOption = (option) => {
+        const knownCodes = new Set(addedModules.map(m => m.moduleCode))
+        const filtered = {}
+        Object.entries(option.selectedSlots).forEach(([code, slots]) => {
+            if (knownCodes.has(code)) filtered[code] = slots
+            else console.warn(`AI returned slots for unknown module ${code} — ignored`)
+        })
+        setSelectedSlots(filtered)
+        setAiModalOpen(false)
+        setAiStatus('idle')
     }
 
     // Grid helpers
@@ -386,16 +466,19 @@ function TimetableBuilder() {
 
                     <div style={s.rightTopbar}>
                         <h2 style={s.rightTitle}>Weekly Timetable</h2>
-                        <button
-                            onClick={handleSave}
-                            disabled={saveStatus === 'saving'}
-                            style={s.saveBtn(saveStatus)}
-                        >
-                            {saveStatus === 'saving' ? 'Saving…'
-                                : saveStatus === 'saved' ? '✓ Saved'
-                                    : saveStatus === 'error' ? 'Error — retry?'
-                                        : 'Save'}
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button onClick={openAiModal} style={s.aiBtn}>AI Generate</button>
+                            <button
+                                onClick={handleSave}
+                                disabled={saveStatus === 'saving'}
+                                style={s.saveBtn(saveStatus)}
+                            >
+                                {saveStatus === 'saving' ? 'Saving…'
+                                    : saveStatus === 'saved' ? '✓ Saved'
+                                        : saveStatus === 'error' ? 'Error — retry?'
+                                            : 'Save'}
+                            </button>
+                        </div>
                     </div>
 
                     {clashes.length > 0 && (
@@ -472,6 +555,106 @@ function TimetableBuilder() {
                     </div>
                 </div>
             </div>
+            {aiModalOpen && (
+                <div style={s.backdrop} onClick={() => { if (aiStatus !== 'loading') setAiModalOpen(false) }}>
+                    <div style={s.modal} onClick={e => e.stopPropagation()}>
+
+                        <div style={s.modalHeader}>
+                            <div>
+                                <div style={s.modalTitle}>Generate Timetable with AI</div>
+                                <div style={s.modalSub}>Describe your ideal schedule and AI will suggest options</div>
+                            </div>
+                            {aiStatus !== 'loading' && (
+                                <button style={s.modalClose} onClick={() => setAiModalOpen(false)}>×</button>
+                            )}
+                        </div>
+
+                        <div style={s.modalBody}>
+                            {aiStatus === 'loading' && (
+                                <div style={{ textAlign: 'center', padding: '32px 0', color: '#7a6a5a', fontSize: '13px' }}>
+                                    Generating your timetable...
+                                </div>
+                            )}
+
+                            {aiStatus === 'results' && (
+                                <>
+                                    <div style={{ fontSize: '12px', color: '#7a6a5a', marginBottom: '14px' }}>
+                                        {aiOptions.length} option{aiOptions.length !== 1 ? 's' : ''} found — click Apply to load it into your timetable
+                                    </div>
+                                    {aiOptions.map(opt => (
+                                        <div key={opt.rank} style={s.optionCard}>
+                                            <div style={s.optionHeader}>
+                                                <span style={s.optionRank}>Option {opt.rank}</span>
+                                                <button style={s.optionApply} onClick={() => handleApplyOption(opt)}>Apply</button>
+                                            </div>
+                                            <div style={s.optionMeta}>
+                                                <span>{opt.totalWeeklyHours}h / week</span>
+                                                <span>Score {opt.score}</span>
+                                            </div>
+                                            <div style={s.optionDays}>
+                                                {opt.daysUsed.map(d => (
+                                                    <span key={d} style={s.optionDayChip}>{d.slice(0, 3).toUpperCase()}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
+                            )}
+
+                            {(aiStatus === 'idle' || aiStatus === 'error') && (
+                                <>
+                                    {aiStatus === 'error' && (
+                                        <div style={s.aiErrorMsg}>{aiError}</div>
+                                    )}
+                                    <div style={s.prefLabel}>Your preferences</div>
+                                    <textarea
+                                        style={s.prefTextarea}
+                                        placeholder="e.g. no early morning classes, prefer Friday off, spread lectures across the week"
+                                        value={aiPrefs}
+                                        onChange={e => setAiPrefs(e.target.value)}
+                                        autoFocus
+                                    />
+                                    <div style={{ marginTop: '14px' }}>
+                                        <div style={s.prefLabel}>Modules to include</div>
+                                        {addedModules.length === 0 ? (
+                                            <div style={s.emptyHint}>Add some modules first</div>
+                                        ) : (
+                                            <div style={s.chipRow}>
+                                                {addedModules.map(m => (
+                                                    <span key={m.moduleCode} style={s.chip}>{m.moduleCode}</span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        <div style={s.modalFooter}>
+                            {aiStatus === 'results' ? (
+                                <>
+                                    <button style={s.regenBtn} onClick={() => setAiStatus('idle')}>Regenerate</button>
+                                    <button style={s.cancelBtn} onClick={() => setAiModalOpen(false)}>Close</button>
+                                </>
+                            ) : aiStatus === 'loading' ? (
+                                <button style={s.cancelBtn} onClick={() => setAiModalOpen(false)}>Cancel</button>
+                            ) : (
+                                <>
+                                    <button style={s.cancelBtn} onClick={() => setAiModalOpen(false)}>Cancel</button>
+                                    <button
+                                        style={addedModules.length === 0 ? s.genBtnDis : s.genBtn}
+                                        onClick={handleAiGenerate}
+                                        disabled={addedModules.length === 0}
+                                    >
+                                        Generate
+                                    </button>
+                                </>
+                            )}
+                        </div>
+
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
