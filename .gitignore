@@ -144,3 +144,5 @@ vite.config.ts.timestamp-*
 .DS_Store
 **/.DS_Store
 .DS_Store # adjust path if .gitignore is in server/ instead
+.vercel
+.env*

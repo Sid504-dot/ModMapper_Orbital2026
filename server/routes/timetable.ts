@@ -138,6 +138,18 @@ router.post('/generate-timetable', async (req: Request, res: Response<ApiRespons
             });
         }
 
+        console.log('constraints', JSON.stringify(constraints));
+        console.log('options', options.length, 'truncated', truncated);
+
+        if (options.length === 0) {
+            return res.status(200).json({
+                success: false,
+                message: 'No clash-free timetable satisfies those preferences.',
+                data: { options: [], constraints, valid, issues, truncated },
+                error: 'NO_FEASIBLE_TIMETABLE'
+            });
+        }
+
         return res.status(200).json({
             success: true,
             message: 'Timetable generated successfully.',
