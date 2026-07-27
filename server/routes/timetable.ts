@@ -9,6 +9,28 @@ import { ValidationResult } from '../domain/timetableGenerator/validateParsedCon
 import { generateTimetableOptions } from '../domain/timetableGenerator/timetableOptions';
 import { currentAcademicSemester } from '../domain/calendar/currentAcaSem';
 import { expandSelectedSlots } from '../domain/timetableGenerator/expandSelectedSlots';
+import { ModuleRecord } from '../types/timetableGenerator';
+
+router.get('/semester', async (_req: Request, res: Response<ApiResponse>) => {
+    try {
+        const semester = currentAcademicSemester();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Current academic semester fetched successfully',
+            data: { semester },
+            error: null
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to determine the current academic semester',
+            data: null,
+            error: err instanceof Error ? err.message : 'Unknown error'
+        });
+    }
+});
 
 router.get('/', async (req: Request, res: Response<ApiResponse>) => {
     const userID = req.user.id;
@@ -71,7 +93,7 @@ router.post('/generate-timetable', async (req: Request, res: Response<ApiRespons
         if (!user_request || typeof user_request !== 'string') {
             return res.status(400).json({
                 success: false,
-                message: 'User request is required.',
+                message: 'Describe your preferences to generate a timetable.',
                 data: null,
                 error: 'Missing user_request.'
             });
@@ -80,7 +102,7 @@ router.post('/generate-timetable', async (req: Request, res: Response<ApiRespons
         if (!Array.isArray(modules) || modules.length === 0) {
             return res.status(400).json({
                 success: false,
-                message: 'No modules provided.',
+                message: 'Add at least one module before generating.',
                 data: null,
                 error: 'Missing modules.'
             });
@@ -91,7 +113,7 @@ router.post('/generate-timetable', async (req: Request, res: Response<ApiRespons
         if (!valid) {
             return res.status(400).json({
                 success: false,
-                message: 'Unable to understand timetable preferences.',
+                message: 'Could not read those preferences. Try rephrasing them.',
                 data: { valid, issues },
                 error: 'Unable to understand timetable preferences.'
             });
@@ -99,7 +121,22 @@ router.post('/generate-timetable', async (req: Request, res: Response<ApiRespons
 
         const semester = currentAcademicSemester();
 
-        const { options, truncated } = generateTimetableOptions( modules, semester, constraints, { maxResults: 5 });
+        const { options, truncated } = generateTimetableOptions(modules, semester, constraints, { maxResults: 5 });
+
+        if (options.length === 0) {
+            const noSemesterData = (modules as ModuleRecord[])
+                .filter(m => !m.semesterData?.some(sd => sd.semester === semester))
+                .map(m => m.moduleCode);
+
+            return res.status(200).json({
+                success: false,
+                message: noSemesterData.length > 0
+                    ? `These modules are not offered in semester ${semester}: ${noSemesterData.join(', ')}`
+                    : 'No clash-free timetable satisfies those preferences. Try relaxing them.',
+                data: { options: [], semester, constraints, valid, issues, truncated, noSemesterData },
+                error: 'NO_FEASIBLE_TIMETABLE'
+            });
+        }
 
         console.log('constraints', JSON.stringify(constraints));
         console.log('options', options.length, 'truncated', truncated);
@@ -116,7 +153,9 @@ router.post('/generate-timetable', async (req: Request, res: Response<ApiRespons
         return res.status(200).json({
             success: true,
             message: 'Timetable generated successfully.',
-            data: { options, valid, issues, truncated },
+            // `semester` and `constraints` are echoed so the client can align its own
+            // semesterData lookups and show how the request was interpreted.
+            data: { options, semester, constraints, valid, issues, truncated },
             error: null
         });
 
@@ -136,12 +175,21 @@ router.post('/save-generated', async (req: Request, res: Response<ApiResponse>) 
     const { selectedSlots, modules } = req.body;
 
     try {
-        if (!selectedSlots) {
+        if (!selectedSlots || typeof selectedSlots !== 'object' || Array.isArray(selectedSlots)) {
             return res.status(400).json({
                 success: false,
                 message: 'selectedSlots is required.',
                 data: null,
-                error: 'Missing selectedSlots.'
+                error: 'Missing or malformed selectedSlots.'
+            });
+        }
+
+        if (Object.keys(selectedSlots).length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Select at least one class before saving.',
+                data: null,
+                error: 'Empty selectedSlots.'
             });
         }
 
@@ -156,12 +204,24 @@ router.post('/save-generated', async (req: Request, res: Response<ApiResponse>) 
 
         const semester = currentAcademicSemester();
 
-
         const timetable_data = expandSelectedSlots(
             selectedSlots,
             modules,
             semester
         );
+
+        if (timetable_data.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: `No classes matched your selection for semester ${semester}. Nothing was saved.`,
+                data: {
+                    semester,
+                    moduleCodes: (modules as ModuleRecord[]).map(m => m.moduleCode),
+                    selectedSlotKeys: Object.keys(selectedSlots)
+                },
+                error: 'EMPTY_EXPANSION'
+            });
+        }
 
         const entryData = {
             user_id: userID,
@@ -172,7 +232,7 @@ router.post('/save-generated', async (req: Request, res: Response<ApiResponse>) 
 
         return res.status(200).json({
             success: true,
-            message: 'Generated timetable saved successfully.',
+            message: 'Timetable saved.',
             data,
             error: null
         });
